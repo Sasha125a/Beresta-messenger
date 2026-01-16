@@ -1,15 +1,32 @@
 {
   "name": "beresta-messenger",
   "version": "1.0.0",
-  "description": "Мессенджер Береста с регистрацией и контактами",
+  "description": "Современный мессенджер с голосовыми сообщениями, файлами и аудиозвонками",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "render-start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "ws": "^8.14.2",
     "sqlite3": "^5.1.6",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2"
-  }
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "messenger",
+    "chat",
+    "webrtc",
+    "voice-messages",
+    "file-sharing"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
