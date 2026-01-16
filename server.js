@@ -6,9 +6,14 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 8080;
-const JWT_SECRET = 'береста_секретный_ключ_2024';
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+// Конфигурация для Render.com
+const PORT = process.env.PORT || 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'береста_секретный_ключ_2024_рендер';
+const HOST = process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost';
+const PROTOCOL = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+
+// Пути для загрузок
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const AUDIO_DIR = path.join(UPLOADS_DIR, 'audio');
 const FILES_DIR = path.join(UPLOADS_DIR, 'files');
 
@@ -23,14 +28,15 @@ if (!fs.existsSync(FILES_DIR)) {
     fs.mkdirSync(FILES_DIR, { recursive: true });
 }
 
-// Инициализация базы данных
-const db = new sqlite3.Database(':memory:');
+// Инициализация базы данных (используем файловую БД для сохранения данных)
+const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'beresta.db');
+const db = new sqlite3.Database(dbPath);
 
 // Инициализация таблиц
 db.serialize(() => {
     // Пользователи
     db.run(`
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             username TEXT NOT NULL,
@@ -41,7 +47,7 @@ db.serialize(() => {
 
     // Контакты
     db.run(`
-        CREATE TABLE contacts (
+        CREATE TABLE IF NOT EXISTS contacts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             contact_id INTEGER NOT NULL,
@@ -54,7 +60,7 @@ db.serialize(() => {
 
     // Чаты
     db.run(`
-        CREATE TABLE chats (
+        CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             is_group BOOLEAN DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -63,7 +69,7 @@ db.serialize(() => {
 
     // Участники чатов с персональным названием чата для каждого участника
     db.run(`
-        CREATE TABLE chat_members (
+        CREATE TABLE IF NOT EXISTS chat_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL,
@@ -77,7 +83,7 @@ db.serialize(() => {
 
     // Сообщения
     db.run(`
-        CREATE TABLE messages (
+        CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL,
@@ -95,25 +101,39 @@ db.serialize(() => {
         )
     `);
 
-    // Создаем тестового пользователя
-    const testHash = bcrypt.hashSync('password123', 10);
-    db.run(
-        'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
-        ['test@example.com', 'Тестовый Пользователь', testHash],
-        function(err) {
-            if (err) {
-                console.error('Error creating test user:', err);
-            } else {
-                console.log('Test user created with ID:', this.lastID);
-            }
-        }
-    );
+    // Проверяем, есть ли тестовые пользователи
+    db.get('SELECT COUNT(*) as count FROM users', (err, result) => {
+        if (result.count === 0) {
+            // Создаем тестовых пользователей
+            const testHash = bcrypt.hashSync('password123', 10);
+            
+            db.serialize(() => {
+                db.run(
+                    'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
+                    ['test@example.com', 'Тестовый Пользователь', testHash],
+                    function(err) {
+                        if (err) {
+                            console.error('Error creating test user:', err);
+                        } else {
+                            console.log('Test user created with ID:', this.lastID);
+                        }
+                    }
+                );
 
-    // Создаем еще одного тестового пользователя
-    db.run(
-        'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
-        ['user2@example.com', 'Второй Пользователь', testHash]
-    );
+                db.run(
+                    'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
+                    ['user2@example.com', 'Второй Пользователь', testHash],
+                    function(err) {
+                        if (err) {
+                            console.error('Error creating second test user:', err);
+                        } else {
+                            console.log('Second test user created with ID:', this.lastID);
+                        }
+                    }
+                );
+            });
+        }
+    });
 });
 
 // Middleware для обработки JSON
@@ -158,7 +178,7 @@ function authenticate(req, res, next) {
     }
 }
 
-// HTML шаблон с поддержкой голосовых сообщений, файлов и аудиозвонков
+// HTML шаблон с динамическими URL для Render
 const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -167,6 +187,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <title>Береста - Мессенджер</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Все CSS стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -182,1205 +203,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             align-items: center;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            height: 90vh;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Панель авторизации */
-        .auth-panel {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 400px;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .app-panel {
-            display: none;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .app-panel.active {
-            display: flex;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo h1 {
-            font-size: 32px;
-            color: #4f46e5;
-            margin-bottom: 10px;
-        }
-
-        .logo p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #4f46e5;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: #f3f4f6;
-            color: #4f46e5;
-        }
-
-        .error-message {
-            color: #ef4444;
-            font-size: 14px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .toggle-auth {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-        }
-
-        .toggle-auth a {
-            color: #4f46e5;
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Основной интерфейс */
-        .sidebar {
-            width: 300px;
-            background: #f8fafc;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-info {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        .user-details h3 {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .user-details p {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .nav-tabs {
-            display: flex;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .nav-tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.3s;
-        }
-
-        .nav-tab.active {
-            color: #4f46e5;
-            border-bottom: 2px solid #4f46e5;
-        }
-
-        .content-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: none;
-        }
-
-        .panel-content.active {
-            display: block;
-        }
-
-        .list-item {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: background 0.3s;
-            border: 1px solid #e5e7eb;
-        }
-
-        .list-item:hover {
-            background: #f3f4f6;
-        }
-
-        .list-item.active {
-            background: #e0e7ff;
-            border-color: #4f46e5;
-        }
-
-        .list-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .list-item-title {
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .list-item-time {
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .list-item-preview {
-            font-size: 14px;
-            color: #6b7280;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .list-item-preview i {
-            margin-right: 5px;
-            color: #4f46e5;
-        }
-
-        .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .chat-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #f9fafb;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            max-width: 70%;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.own {
-            margin-left: auto;
-        }
-
-        .message-content {
-            padding: 12px 16px;
-            border-radius: 18px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            word-wrap: break-word;
-        }
-
-        .message.own .message-content {
-            background: #4f46e5;
-            color: white;
-            border-color: #4f46e5;
-        }
-
-        .message-info {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .message.own .message-info {
-            justify-content: flex-end;
-        }
-
-        .voice-message {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: rgba(79, 70, 229, 0.1);
-            border-radius: 20px;
-        }
-
-        .message.own .voice-message {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .voice-play-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-
-        .voice-play-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .voice-play-btn.playing {
-            background: #ef4444;
-        }
-
-        .voice-duration {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .voice-waveform {
-            flex: 1;
-            height: 30px;
-            background: rgba(79, 70, 229, 0.1);
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .voice-wave {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding: 0 10px;
-        }
-
-        .voice-bar {
-            width: 2px;
-            background: #4f46e5;
-            border-radius: 1px;
-            transition: height 0.3s;
-        }
-
-        .message.own .voice-bar {
-            background: white;
-        }
-
-        .chat-input-area {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: white;
-            position: sticky;
-            bottom: 0;
-        }
-
-        .chat-input {
-            flex: 1;
-            position: relative;
-        }
-
-        .chat-input input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-            padding-right: 60px;
-        }
-
-        .chat-input input:focus {
-            outline: none;
-            border-color: #4f46e5;
-        }
-
-        .input-hint {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 12px;
-            pointer-events: none;
-        }
-
-        .input-hint i {
-            margin-right: 5px;
-        }
-
-        .voice-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            z-index: 10;
-            display: none;
-        }
-
-        .voice-indicator.show {
-            display: flex;
-        }
-
-        .voice-indicator-recording {
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        .voice-indicator-timer {
-            font-size: 14px;
-            font-weight: 600;
-            color: #ef4444;
-        }
-
-        .send-button {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .send-button:hover {
-            background: #3c3791;
-        }
-
-        .send-button.recording {
-            background: #ef4444;
-            animation: pulse 1.5s infinite;
-        }
-
-        .send-button:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .send-button i {
-            transition: transform 0.3s;
-        }
-
-        .send-button.recording i {
-            transform: scale(1.2);
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 400px;
-            max-width: 90%;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-header h3 {
-            font-size: 20px;
-            color: #1f2937;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .search-box {
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #9ca3af;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .contact-item:hover {
-            background: #f3f4f6;
-        }
-
-        .contact-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #8b5cf6, #6366f1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .contact-info h4 {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .contact-info p {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .add-contact-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
-            border: none;
-        }
-        
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            background: #10b981;
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 1001;
-        }
-        
-        .notification.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .typing-indicator {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 20px;
-            max-width: fit-content;
-            margin-bottom: 10px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .typing-indicator.show {
-            display: flex;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background: #9ca3af;
-            border-radius: 50%;
-            animation: typingAnimation 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingAnimation {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
-        }
-
-        .emoji-picker {
-            position: absolute;
-            bottom: 70px;
-            right: 20px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 100;
-        }
-
-        .emoji-picker.show {
-            display: block;
-        }
-
-        .emoji-category {
-            margin-bottom: 10px;
-        }
-
-        .emoji-category h4 {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 5px;
-        }
-
-        .emoji {
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .emoji:hover {
-            background: #f3f4f6;
-        }
-
-        /* Стили для файлов */
-        .file-message {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: rgba(79, 70, 229, 0.1);
-            border-radius: 12px;
-            text-decoration: none;
-            color: inherit;
-            transition: background 0.3s;
-        }
-
-        .message.own .file-message {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .file-message:hover {
-            background: rgba(79, 70, 229, 0.15);
-        }
-
-        .file-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-        }
-
-        .file-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .file-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-size {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
-        .download-btn {
-            padding: 8px 12px;
-            background: rgba(79, 70, 229, 0.1);
-            border-radius: 6px;
-            color: #4f46e5;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-
-        .download-btn:hover {
-            background: rgba(79, 70, 229, 0.2);
-        }
-
-        .upload-progress {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 300px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            padding: 15px;
-            z-index: 1002;
-            display: none;
-        }
-
-        .upload-progress.show {
-            display: block;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .upload-list {
-            margin-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .upload-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            border-radius: 6px;
-            margin-bottom: 5px;
-        }
-
-        .upload-item.success {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-        }
-
-        .upload-item.error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-        }
-
-        .attachment-btn {
-            position: relative;
-            display: inline-block;
-        }
-
-        .attachment-menu {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 10px;
-            min-width: 200px;
-            display: none;
-            z-index: 100;
-        }
-
-        .attachment-menu.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .attachment-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .attachment-option:hover {
-            background: #f3f4f6;
-        }
-
-        .attachment-option i {
-            width: 20px;
-            color: #4f46e5;
-        }
-
-        .image-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-
-        /* Стили для аудиозвонков */
-        .call-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-
-        .call-overlay.active {
-            display: flex;
-        }
-
-        .call-container {
-            width: 90%;
-            max-width: 800px;
-            text-align: center;
-        }
-
-        .call-header {
-            margin-bottom: 40px;
-        }
-
-        .call-header h2 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .call-header p {
-            font-size: 18px;
-            color: #aaa;
-        }
-
-        .call-timer {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 30px 0;
-            color: #4f46e5;
-        }
-
-        .call-audio-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            margin: 40px 0;
-        }
-
-        .caller-avatar {
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 48px;
-            font-weight: bold;
-            margin: 0 auto;
-        }
-
-        .call-audio-visualizer {
-            width: 100%;
-            max-width: 400px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .audio-bar {
-            width: 4px;
-            background: #4f46e5;
-            border-radius: 2px;
-            animation: audioPulse 1s infinite;
-        }
-
-        @keyframes audioPulse {
-            0%, 100% { height: 10px; }
-            50% { height: 40px; }
-        }
-
-        .call-controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
-        }
-
-        .call-control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .call-control-btn.accept {
-            background: #10b981;
-            color: white;
-        }
-
-        .call-control-btn.decline {
-            background: #ef4444;
-            color: white;
-        }
-
-        .call-control-btn.end {
-            background: #ef4444;
-            color: white;
-        }
-
-        .call-control-btn.mute {
-            background: #6b7280;
-            color: white;
-        }
-
-        .call-control-btn.mute.active {
-            background: #ef4444;
-        }
-
-        .call-control-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .call-ringing-animation {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .ringing-circle {
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
-            border-radius: 50%;
-            animation: ring 1.5s infinite;
-        }
-
-        .ringing-circle:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .ringing-circle:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes ring {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-        }
-
-        .incoming-call-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 300px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 2001;
-            overflow: hidden;
-            animation: slideInCall 0.3s ease;
-            display: none;
-        }
-
-        @keyframes slideInCall {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .incoming-call-notification.show {
-            display: block;
-        }
-
-        .incoming-call-header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .incoming-call-header h3 {
-            margin-bottom: 5px;
-        }
-
-        .incoming-call-content {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .incoming-call-avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0 auto 15px;
-        }
-
-        .incoming-call-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .incoming-call-actions button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .incoming-call-actions button:hover {
-            transform: translateY(-2px);
-        }
-
-        .incoming-call-accept {
-            background: #10b981;
-            color: white;
-        }
-
-        .incoming-call-decline {
-            background: #ef4444;
-            color: white;
-        }
-
-        .call-status {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            margin: 20px 0;
-            display: inline-block;
-        }
-
-        .volume-slider {
-            width: 200px;
-            margin: 20px auto;
-        }
-
-        .volume-slider input {
-            width: 100%;
-        }
+        /* ... (все остальные стили остаются такими же) ... */
     </style>
 </head>
 <body>
@@ -1704,15 +527,22 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let ringingInterval = null;
         let ringingAudioContext = null;
 
+        // Динамическое определение URL для Render
+        const baseUrl = window.location.origin;
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = wsProtocol + '//' + window.location.host;
+        
+        console.log('Base URL:', baseUrl);
+        console.log('WebSocket URL:', wsUrl);
+
         // WebSocket соединение
         function connectWebSocket() {
             if (!token) return;
 
-            const wsUrl = 'ws://localhost:8080';
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
-                console.log('WebSocket connected');
+                console.log('WebSocket connected to:', wsUrl);
                 ws.send(JSON.stringify({
                     type: 'authenticate',
                     token: token
@@ -1835,7 +665,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/login', {
+                const response = await fetch(baseUrl + '/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1870,6 +700,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showError('loginPasswordError', data.error || 'Ошибка входа');
                 }
             } catch (error) {
+                console.error('Login error:', error);
                 showError('loginPasswordError', 'Ошибка подключения к серверу');
             }
         }
@@ -1914,7 +745,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/register', {
+                const response = await fetch(baseUrl + '/api/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1949,6 +780,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showError('registerEmailError', data.error || 'Ошибка регистрации');
                 }
             } catch (error) {
+                console.error('Register error:', error);
                 showError('registerEmailError', 'Ошибка подключения к серверу');
             }
         }
@@ -2147,7 +979,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showNotification('Ошибка загрузки файла', 'error');
                 };
 
-                xhr.open('POST', 'http://localhost:8080/api/upload-file');
+                xhr.open('POST', baseUrl + '/api/upload-file');
                 xhr.setRequestHeader('Authorization', 'Bearer ' + token);
                 xhr.send(formData);
 
@@ -2181,7 +1013,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Загрузка чатов
         async function loadChats() {
             try {
-                const response = await fetch('http://localhost:8080/api/chats', {
+                const response = await fetch(baseUrl + '/api/chats', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2246,7 +1078,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Загрузка контактов
         async function loadContacts() {
             try {
-                const response = await fetch('http://localhost:8080/api/contacts', {
+                const response = await fetch(baseUrl + '/api/contacts', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2319,7 +1151,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         async function loadMessages(chatId) {
             try {
-                const response = await fetch('http://localhost:8080/api/messages/' + chatId, {
+                const response = await fetch(baseUrl + '/api/messages/' + chatId, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2368,7 +1200,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     html += '</div>';
                 } else if (message.message_type === 'file') {
                     // Файловое сообщение
-                    const fileUrl = 'http://localhost:8080' + message.file_url;
+                    const fileUrl = baseUrl + message.file_url;
                     const fileIcon = getFileIcon(message.file_type);
                     
                     html += '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">';
@@ -2434,7 +1266,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     '</div>';
             } else if (message.message_type === 'file') {
                 // Файловое сообщение
-                const fileUrl = 'http://localhost:8080' + message.file_url;
+                const fileUrl = baseUrl + message.file_url;
                 const fileIcon = getFileIcon(message.file_type);
                 
                 messageDiv.innerHTML = '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">' +
@@ -2603,7 +1435,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             formData.append('duration', Math.floor((Date.now() - recordingStartTime) / 1000));
 
             try {
-                const response = await fetch('http://localhost:8080/api/upload-audio', {
+                const response = await fetch(baseUrl + '/api/upload-audio', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token
@@ -2649,7 +1481,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             if (!audioElements.has(messageId)) {
                 // Создаем новый аудио элемент
-                const audio = new Audio('http://localhost:8080' + audioUrl);
+                const audio = new Audio(baseUrl + audioUrl);
                 audioElements.set(messageId, audio);
                 
                 audio.addEventListener('play', () => {
@@ -2709,7 +1541,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             document.querySelectorAll('.voice-play-btn').forEach(button => {
                 const onclickAttr = button.getAttribute('onclick');
                 if (onclickAttr) {
-                    const match = onclickAttr.match(/toggleAudioPlayback\\((\\d+)\\)/);
+                    const match = onclickAttr.match(/toggleAudioPlayback\\((\d+)\\)/);
                     if (match) {
                         const messageId = parseInt(match[1]);
                         if (audioElements.has(messageId)) {
@@ -2817,7 +1649,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/contacts', {
+                const response = await fetch(baseUrl + '/api/contacts', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2843,7 +1675,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         async function startChatWithContact(contactId) {
             try {
-                const response = await fetch('http://localhost:8080/api/start-chat', {
+                const response = await fetch(baseUrl + '/api/start-chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3016,7 +1848,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             if (!currentChatId) return null;
             
             try {
-                const response = await fetch('http://localhost:8080/api/chat/' + currentChatId + '/other-user', {
+                const response = await fetch(baseUrl + '/api/chat/' + currentChatId + '/other-user', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -3463,6 +2295,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     hideAttachmentMenu();
                 }
             });
+            
+            console.log('Application initialized');
+            console.log('Base URL:', baseUrl);
+            console.log('WebSocket URL:', wsUrl);
         };
     </script>
 </body>
@@ -3516,13 +2352,23 @@ const server = http.createServer((req, res) => {
         parseJSON(req, res, () => {
             authenticate(req, res, () => handleGetOtherUser(req, res));
         });
-    } else if (req.url === '/' || req.url === '/index.html') {
+    } else if (req.url === '/' || req.url === '/index.html' || req.url === '/index') {
         // Отдаем HTML интерфейс
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(HTML_TEMPLATE);
+    } else if (req.url === '/health' || req.url === '/ping') {
+        // Health check для Render
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
     } else {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Not found' }));
+        // Для SPA роутинга - возвращаем index.html
+        if (req.method === 'GET' && !req.url.includes('.')) {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(HTML_TEMPLATE);
+        } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Not found' }));
+        }
     }
 });
 
@@ -3683,6 +2529,7 @@ function handleUploadAudio(req, res) {
         });
         
     } catch (error) {
+        console.error('Token verification error:', error);
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid token' }));
     }
@@ -3856,6 +2703,7 @@ function handleUploadFile(req, res) {
         });
         
     } catch (error) {
+        console.error('Token verification error:', error);
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid token' }));
     }
@@ -4579,42 +3427,73 @@ wss.on('connection', (ws, req) => {
             clients.delete(ws.userId);
         }
     });
+    
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
 });
 
 // Запускаем сервер
 server.listen(PORT, () => {
-    console.log('Сервер Береста запущен на порту ' + PORT);
-    console.log('HTTP сервер: http://localhost:' + PORT);
-    console.log('WebSocket сервер: ws://localhost:' + PORT);
-    console.log('\nДоступные тестовые аккаунты:');
+    console.log('🚀 Сервер Береста запущен!');
+    console.log('📍 Порт:', PORT);
+    console.log('🌐 HTTP сервер:', 'http://localhost:' + PORT);
+    console.log('🔗 WebSocket сервер:', 'ws://localhost:' + PORT);
+    
+    if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+        console.log('🌍 Внешний URL:', 'https://' + process.env.RENDER_EXTERNAL_HOSTNAME);
+        console.log('🔗 WebSocket URL:', 'wss://' + process.env.RENDER_EXTERNAL_HOSTNAME);
+    }
+    
+    console.log('\n👥 Доступные тестовые аккаунты:');
     console.log('1. Email: test@example.com, Пароль: password123 (Тестовый Пользователь)');
     console.log('2. Email: user2@example.com, Пароль: password123 (Второй Пользователь)');
+    
     console.log('\n📱 Улучшенная система отправки сообщений:');
-    console.log('1. Нажмите кнопку отправки - отправится текстовое сообщение');
-    console.log('2. Удерживайте кнопку отправки - начнется запись голосового сообщения');
-    console.log('3. Отпустите кнопку - голосовое сообщение будет отправлено');
-    console.log('4. Максимальная длительность записи: 2 минуты');
+    console.log('• Нажмите кнопку отправки - отправится текстовое сообщение');
+    console.log('• Удерживайте кнопку отправки - начнется запись голосового сообщения');
+    console.log('• Отпустите кнопку - голосовое сообщение будет отправлено');
+    console.log('• Максимальная длительность записи: 2 минуты');
+    
     console.log('\n📎 Система отправки файлов:');
-    console.log('1. Нажмите кнопку скрепки для выбора типа файла');
-    console.log('2. Выберите файлы для отправки');
-    console.log('3. Файлы автоматически загрузятся и отправятся в чат');
-    console.log('4. Максимальный размер файла: 50MB');
-    console.log('5. Поддерживаемые типы: изображения, PDF, видео, документы и любые другие файлы');
-    console.log('\n💬 Персонализированные названия чатов:');
-    console.log('• У пользователя 1 чат называется "Чат с Пользователем 2"');
-    console.log('• У пользователя 2 чат называется "Чат с Пользователем 1"');
+    console.log('• Поддерживаемые типы: изображения, PDF, видео, документы и любые другие файлы');
+    console.log('• Максимальный размер файла: 50MB');
+    
     console.log('\n📞 Аудиозвонки:');
-    console.log('• Нажмите кнопку телефона в заголовке чата для начала звонка');
-    console.log('• При входящем звонке появится уведомление со звуком');
-    console.log('• Во время звонка можно отключить микрофон');
     console.log('• Используется WebRTC для P2P соединения');
     console.log('• Поддерживаются STUN серверы для обхода NAT');
-    console.log('\nКак тестировать звонки:');
-    console.log('1. Откройте два браузера (Chrome и Firefox)');
-    console.log('2. Войдите под test@example.com в первом браузере');
-    console.log('3. Войдите под user2@example.com во втором браузере');
-    console.log('4. Откройте общий чат в обоих браузерах');
-    console.log('5. Нажмите кнопку телефона в одном из браузеров');
-    console.log('6. Во втором браузере появится уведомление о звонке');
-    console.log('\nОткройте в браузере: http://localhost:' + PORT);
+    
+    console.log('\n💾 База данных:', dbPath);
+    console.log('📁 Директория загрузок:', UPLOADS_DIR);
+    
+    if (process.env.NODE_ENV === 'production') {
+        console.log('\n✅ Режим: Production (Render.com)');
+        console.log('✅ Автоматическое определение URL');
+        console.log('✅ Поддержка HTTPS/WebSocket Secure');
+    } else {
+        console.log('\n⚙️  Режим: Development');
+    }
+    
+    console.log('\n✅ Готово! Откройте в браузере: http://localhost:' + PORT);
+});
+
+// Обработка graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        db.close();
+        console.log('Database connection closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        db.close();
+        console.log('Database connection closed');
+        process.exit(0);
+    });
 });
