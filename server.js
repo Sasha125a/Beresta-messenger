@@ -202,14 +202,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             align-items: center;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            height: 90vh;
-            display: flex;
-            overflow: hidden;
-        }
-
         /* Панель авторизации */
         .auth-panel {
             background: white;
@@ -228,6 +220,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
+            max-width: 1200px;
+            height: 90vh;
             overflow: hidden;
         }
 
@@ -1458,8 +1452,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- Основной интерфейс -->
-    <div class="container">
+    <!-- Основной интерфейс (скрыт до входа) -->
+    <div class="container" style="display: none;" id="appContainer">
         <div class="app-panel" id="appPanel">
             <!-- Боковая панель -->
             <div class="sidebar">
@@ -1724,15 +1718,22 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let ringingInterval = null;
         let ringingAudioContext = null;
 
+        // Динамическое определение URL для Render
+        const baseUrl = window.location.origin;
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = wsProtocol + '//' + window.location.host;
+        
+        console.log('Base URL:', baseUrl);
+        console.log('WebSocket URL:', wsUrl);
+
         // WebSocket соединение
         function connectWebSocket() {
             if (!token) return;
 
-            const wsUrl = 'ws://localhost:8080';
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
-                console.log('WebSocket connected');
+                console.log('WebSocket connected to:', wsUrl);
                 ws.send(JSON.stringify({
                     type: 'authenticate',
                     token: token
@@ -1855,7 +1856,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/login', {
+                const response = await fetch(baseUrl + '/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1876,6 +1877,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
                     document.getElementById('addContactBtn').style.display = 'block';
                     
@@ -1890,6 +1892,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showError('loginPasswordError', data.error || 'Ошибка входа');
                 }
             } catch (error) {
+                console.error('Login error:', error);
                 showError('loginPasswordError', 'Ошибка подключения к серверу');
             }
         }
@@ -1934,7 +1937,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/register', {
+                const response = await fetch(baseUrl + '/api/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1955,6 +1958,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
                     document.getElementById('addContactBtn').style.display = 'block';
                     
@@ -1969,6 +1973,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showError('registerEmailError', data.error || 'Ошибка регистрации');
                 }
             } catch (error) {
+                console.error('Register error:', error);
                 showError('registerEmailError', 'Ошибка подключения к серверу');
             }
         }
@@ -2167,7 +2172,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     showNotification('Ошибка загрузки файла', 'error');
                 };
 
-                xhr.open('POST', 'http://localhost:8080/api/upload-file');
+                xhr.open('POST', baseUrl + '/api/upload-file');
                 xhr.setRequestHeader('Authorization', 'Bearer ' + token);
                 xhr.send(formData);
 
@@ -2201,7 +2206,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Загрузка чатов
         async function loadChats() {
             try {
-                const response = await fetch('http://localhost:8080/api/chats', {
+                const response = await fetch(baseUrl + '/api/chats', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2266,7 +2271,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Загрузка контактов
         async function loadContacts() {
             try {
-                const response = await fetch('http://localhost:8080/api/contacts', {
+                const response = await fetch(baseUrl + '/api/contacts', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2339,7 +2344,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         async function loadMessages(chatId) {
             try {
-                const response = await fetch('http://localhost:8080/api/messages/' + chatId, {
+                const response = await fetch(baseUrl + '/api/messages/' + chatId, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -2388,7 +2393,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     html += '</div>';
                 } else if (message.message_type === 'file') {
                     // Файловое сообщение
-                    const fileUrl = 'http://localhost:8080' + message.file_url;
+                    const fileUrl = baseUrl + message.file_url;
                     const fileIcon = getFileIcon(message.file_type);
                     
                     html += '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">';
@@ -2454,7 +2459,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     '</div>';
             } else if (message.message_type === 'file') {
                 // Файловое сообщение
-                const fileUrl = 'http://localhost:8080' + message.file_url;
+                const fileUrl = baseUrl + message.file_url;
                 const fileIcon = getFileIcon(message.file_type);
                 
                 messageDiv.innerHTML = '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">' +
@@ -2623,7 +2628,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             formData.append('duration', Math.floor((Date.now() - recordingStartTime) / 1000));
 
             try {
-                const response = await fetch('http://localhost:8080/api/upload-audio', {
+                const response = await fetch(baseUrl + '/api/upload-audio', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token
@@ -2669,7 +2674,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             if (!audioElements.has(messageId)) {
                 // Создаем новый аудио элемент
-                const audio = new Audio('http://localhost:8080' + audioUrl);
+                const audio = new Audio(baseUrl + audioUrl);
                 audioElements.set(messageId, audio);
                 
                 audio.addEventListener('play', () => {
@@ -2729,7 +2734,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             document.querySelectorAll('.voice-play-btn').forEach(button => {
                 const onclickAttr = button.getAttribute('onclick');
                 if (onclickAttr) {
-                    const match = onclickAttr.match(/toggleAudioPlayback\\((\\d+)\\)/);
+                    const match = onclickAttr.match(/toggleAudioPlayback\\((\d+)\\)/);
                     if (match) {
                         const messageId = parseInt(match[1]);
                         if (audioElements.has(messageId)) {
@@ -2837,7 +2842,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/contacts', {
+                const response = await fetch(baseUrl + '/api/contacts', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2863,7 +2868,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         async function startChatWithContact(contactId) {
             try {
-                const response = await fetch('http://localhost:8080/api/start-chat', {
+                const response = await fetch(baseUrl + '/api/start-chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3036,7 +3041,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             if (!currentChatId) return null;
             
             try {
-                const response = await fetch('http://localhost:8080/api/chat/' + currentChatId + '/other-user', {
+                const response = await fetch(baseUrl + '/api/chat/' + currentChatId + '/other-user', {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -3483,6 +3488,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     hideAttachmentMenu();
                 }
             });
+            
+            console.log('Application initialized');
+            console.log('Base URL:', baseUrl);
+            console.log('WebSocket URL:', wsUrl);
         };
     </script>
 </body>
@@ -4681,4 +4690,3 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
-
