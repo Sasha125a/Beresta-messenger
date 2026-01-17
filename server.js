@@ -185,7 +185,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Береста - Мессенджер</title>
@@ -211,14 +211,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             --top-nav-height: 60px;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
             padding: 10px;
         }
 
@@ -257,14 +261,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .logo h1 {
-            font-size: clamp(24px, 5vw, 32px);
+            font-size: 32px;
             color: var(--primary-color);
             margin-bottom: 10px;
         }
 
         .logo p {
             color: var(--text-secondary);
-            font-size: clamp(12px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .form-group {
@@ -276,7 +280,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             margin-bottom: 8px;
             color: var(--text-primary);
             font-weight: 500;
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
         }
 
         .form-group input {
@@ -284,7 +288,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             padding: 12px 16px;
             border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
             transition: border-color 0.3s;
         }
 
@@ -300,7 +304,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s;
@@ -318,7 +322,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .error-message {
             color: var(--error-color);
-            font-size: clamp(12px, 2.5vw, 14px);
+            font-size: 14px;
             margin-top: 5px;
             display: none;
         }
@@ -331,7 +335,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             text-align: center;
             margin-top: 20px;
             color: var(--text-secondary);
-            font-size: clamp(12px, 2.5vw, 14px);
+            font-size: 14px;
         }
 
         .toggle-auth a {
@@ -379,7 +383,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             gap: 6px;
             border-bottom: 2px solid transparent;
-            font-size: clamp(12px, 2.5vw, 14px);
+            font-size: 14px;
             min-height: 40px;
         }
 
@@ -389,7 +393,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .nav-tab i {
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
         }
 
         /* Миниатюра пользователя */
@@ -437,7 +441,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         /* Заголовок чата в навигации */
         .chat-title {
             flex: 1;
-            font-size: clamp(16px, 4vw, 18px);
+            font-size: 18px;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
@@ -504,13 +508,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .user-details h3 {
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
             margin-bottom: 2px;
             color: var(--text-primary);
         }
 
         .user-details p {
-            font-size: clamp(11px, 2.5vw, 12px);
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
@@ -561,21 +565,21 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .list-item-title {
             font-weight: 600;
             color: var(--text-primary);
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .list-item-time {
-            font-size: clamp(10px, 2vw, 12px);
+            font-size: 12px;
             color: #9ca3af;
             flex-shrink: 0;
             margin-left: 8px;
         }
 
         .list-item-preview {
-            font-size: clamp(12px, 2.5vw, 13px);
+            font-size: 13px;
             color: var(--text-secondary);
             white-space: nowrap;
             overflow: hidden;
@@ -629,7 +633,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: white;
             border: 1px solid var(--border-color);
             word-wrap: break-word;
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
             line-height: 1.4;
         }
 
@@ -643,7 +647,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             margin-top: 4px;
-            font-size: clamp(10px, 2vw, 12px);
+            font-size: 12px;
             color: #9ca3af;
             padding: 0 5px;
         }
@@ -689,7 +693,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .voice-duration {
-            font-size: clamp(12px, 2.5vw, 14px);
+            font-size: 14px;
             font-weight: 500;
             min-width: 40px;
         }
@@ -745,10 +749,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .chat-input input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 12px 16px;
             border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: clamp(14px, 3vw, 16px);
+            font-size: 16px;
             padding-right: 50px;
         }
 
@@ -763,7 +767,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             top: 50%;
             transform: translateY(-50%);
             color: #9ca3af;
-            font-size: clamp(10px, 2vw, 12px);
+            font-size: 12px;
             pointer-events: none;
         }
 
@@ -801,7 +805,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .voice-indicator-timer {
-            font-size: clamp(12px, 2.5vw, 14px);
+            font-size: 14px;
             font-weight: 600;
             color: var(--error-color);
             min-width: 40px;
@@ -887,7 +891,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .modal-header h3 {
-            font-size: clamp(18px, 4vw, 20px);
+            font-size: 20px;
             color: var(--text-primary);
         }
 
@@ -908,21 +912,21 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             padding: 10px 12px;
             border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .loading {
             text-align: center;
             padding: 20px;
             color: var(--text-secondary);
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .empty-state {
             text-align: center;
             padding: 30px 15px;
             color: #9ca3af;
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .contact-item {
@@ -954,13 +958,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .contact-info h4 {
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
             margin-bottom: 2px;
             color: var(--text-primary);
         }
 
         .contact-info p {
-            font-size: clamp(11px, 2.5vw, 12px);
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
@@ -995,7 +999,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: none;
             z-index: 1001;
             max-width: 300px;
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
         
         .notification.show {
@@ -1098,7 +1102,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s;
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .attachment-option:hover {
@@ -1156,11 +1160,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: clamp(13px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .file-size {
-            font-size: clamp(11px, 2.5vw, 12px);
+            font-size: 12px;
             color: #6b7280;
         }
 
@@ -1169,7 +1173,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: rgba(79, 70, 229, 0.1);
             border-radius: 6px;
             color: var(--primary-color);
-            font-size: clamp(12px, 2.5vw, 13px);
+            font-size: 13px;
             font-weight: 500;
             transition: background 0.3s;
             margin-left: 8px;
@@ -1239,7 +1243,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             padding: 6px;
             border-radius: 6px;
             margin-bottom: 4px;
-            font-size: clamp(12px, 2.5vw, 13px);
+            font-size: 13px;
         }
 
         .upload-item.success {
@@ -1324,7 +1328,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             .logo h1 {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .logo p {
@@ -1372,8 +1376,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             .chat-input-area {
-                padding: 10px;
+                padding: 12px;
                 gap: 6px;
+            }
+
+            .chat-input input {
+                padding: 10px 14px;
+                font-size: 16px; /* Увеличиваем для удобства на мобильных */
             }
 
             .send-button {
@@ -1393,6 +1402,50 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             .notification {
                 max-width: 250px;
                 padding: 8px 12px;
+            }
+
+            .form-group input {
+                font-size: 16px; /* Увеличиваем для мобильных */
+                padding: 14px 16px;
+            }
+
+            .btn {
+                font-size: 16px;
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            :root {
+                --sidebar-width: 100%;
+                --top-nav-height: 48px;
+            }
+
+            .app-panel {
+                border-radius: 10px;
+            }
+
+            .logo h1 {
+                font-size: 20px;
+            }
+
+            .form-group input {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+
+            .btn {
+                font-size: 16px;
+                padding: 14px;
+            }
+
+            .chat-input-area {
+                padding: 10px;
+            }
+
+            .chat-input input {
+                font-size: 16px;
+                padding: 10px 12px;
             }
         }
 
@@ -1455,10 +1508,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             .attachment-option {
                 padding: 8px;
+                font-size: 13px;
             }
         }
 
-        /* Стили для аудиозвонков и другие стили остаются без изменений */
+        /* Стили для аудиозвонков */
         .call-overlay {
             position: fixed;
             top: 0;
@@ -1488,17 +1542,17 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-header h2 {
-            font-size: clamp(20px, 5vw, 28px);
+            font-size: 28px;
             margin-bottom: 10px;
         }
 
         .call-header p {
-            font-size: clamp(14px, 4vw, 18px);
+            font-size: 18px;
             color: #aaa;
         }
 
         .call-timer {
-            font-size: clamp(28px, 8vw, 48px);
+            font-size: 48px;
             font-weight: bold;
             margin: 30px 0;
             color: var(--primary-color);
@@ -1513,15 +1567,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .caller-avatar {
-            width: clamp(80px, 25vw, 150px);
-            height: clamp(80px, 25vw, 150px);
+            width: 150px;
+            height: 150px;
             background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: clamp(24px, 8vw, 48px);
+            font-size: 48px;
             font-weight: bold;
             margin: 0 auto;
         }
@@ -1557,14 +1611,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-control-btn {
-            width: clamp(50px, 15vw, 70px);
-            height: clamp(50px, 15vw, 70px);
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(18px, 5vw, 28px);
+            font-size: 28px;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -1631,11 +1685,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .incoming-call-header h3 {
             margin-bottom: 5px;
-            font-size: clamp(16px, 4vw, 18px);
+            font-size: 18px;
         }
 
         .incoming-call-header p {
-            font-size: clamp(12px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .incoming-call-content {
@@ -1665,13 +1719,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .incoming-call-actions button {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.2s;
-            font-size: clamp(12px, 3vw, 14px);
+            font-size: 14px;
         }
 
         .incoming-call-actions button:hover {
@@ -1722,6 +1776,54 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         
         .debug-panel.show {
             display: block;
+        }
+
+        /* Поддержка iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            body, html {
+                height: -webkit-fill-available;
+            }
+            
+            .app-panel {
+                max-height: -webkit-fill-available;
+            }
+            
+            /* Убираем задержку 300ms для мобильных Safari */
+            a, button, input[type="button"], input[type="submit"] {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+
+        /* Для старых браузеров */
+        @media all and (max-width: 1024px) {
+            body {
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+        }
+
+        /* Улучшаем читаемость на маленьких экранах */
+        @media (max-width: 480px) {
+            .list-item-title {
+                font-size: 15px;
+            }
+            
+            .list-item-preview {
+                font-size: 13px;
+            }
+            
+            .contact-info h4 {
+                font-size: 15px;
+            }
+            
+            .contact-info p {
+                font-size: 13px;
+            }
+            
+            .message-content {
+                font-size: 15px;
+            }
         }
     </style>
 </head>
@@ -4117,6 +4219,33 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     toggleDebug();
                 }
             });
+
+            // Улучшаем отображение на мобильных устройствах
+            if (/Mobi|Android/i.test(navigator.userAgent)) {
+                document.body.classList.add('mobile-device');
+                // Увеличиваем размеры некоторых элементов для лучшей читаемости
+                const style = document.createElement('style');
+                style.textContent = `
+                    .mobile-device .form-group input,
+                    .mobile-device .btn {
+                        font-size: 16px !important;
+                    }
+                    
+                    .mobile-device .chat-input input {
+                        font-size: 16px !important;
+                        padding: 12px 16px !important;
+                    }
+                    
+                    .mobile-device .list-item-title {
+                        font-size: 15px !important;
+                    }
+                    
+                    .mobile-device .contact-info h4 {
+                        font-size: 15px !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         };
     </script>
 </body>
@@ -5436,7 +5565,3 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
-
-
-
-
