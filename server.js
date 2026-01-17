@@ -2047,7 +2047,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             });
             
             // Активируем выбранную вкладку
-            const activeTab = document.querySelector(`.nav-tab[onclick="switchTab('${tabName}')"]`);
+            const activeTab = document.querySelector('.nav-tab[onclick="switchTab(\\'' + tabName + '\\')"]');
             if (activeTab) {
                 activeTab.classList.add('active');
             }
@@ -5125,3 +5125,4 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
