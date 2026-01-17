@@ -103,39 +103,19 @@ db.serialize(() => {
         )
     `);
 
-    // Проверяем, есть ли тестовые пользователи
-    db.get('SELECT COUNT(*) as count FROM users', (err, result) => {
-        if (result.count === 0) {
-            // Создаем тестовых пользователей
-            const testHash = bcrypt.hashSync('password123', 10);
-            
-            db.serialize(() => {
-                db.run(
-                    'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
-                    ['test@example.com', 'Тестовый Пользователь', testHash],
-                    function(err) {
-                        if (err) {
-                            console.error('Error creating test user:', err);
-                        } else {
-                            console.log('Test user created with ID:', this.lastID);
-                        }
-                    }
-                );
-
-                db.run(
-                    'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
-                    ['user2@example.com', 'Второй Пользователь', testHash],
-                    function(err) {
-                        if (err) {
-                            console.error('Error creating second test user:', err);
-                        } else {
-                            console.log('Second test user created with ID:', this.lastID);
-                        }
-                    }
-                );
-            });
-        }
-    });
+    // Сессии для автоматического входа
+    db.run(`
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            device_id TEXT NOT NULL,
+            token TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            UNIQUE(user_id, device_id)
+        )
+    `);
 });
 
 // Middleware для обработки JSON
@@ -180,7 +160,7 @@ function authenticate(req, res, next) {
     }
 }
 
-// HTML шаблон с исправленным интерфейсом для Android и сохранением входа
+// HTML шаблон с адаптивным интерфейсом для ПК и мобильных
 const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -490,7 +470,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: #f3f4f6;
         }
 
-        /* Боковая панель */
+        /* Боковая панель (только для ПК) */
         .sidebar {
             width: var(--sidebar-width);
             background: var(--secondary-color);
@@ -614,7 +594,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             font-size: 12px;
         }
 
-        .chat-area {
+        /* Область чата - разные стили для ПК и мобильных */
+        .chat-area-desktop {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -624,6 +605,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             width: 100%;
             height: 100%;
             overflow: hidden;
+            background: #f9fafb;
+        }
+
+        .chat-area-mobile {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f9fafb;
         }
 
         .chat-messages {
@@ -1632,6 +1627,43 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 max-width: none;
                 max-height: calc(100vh - 20px);
             }
+            
+            /* На мобильных скрываем боковую панель и показываем только список чатов */
+            .sidebar {
+                display: none;
+            }
+            
+            /* На мобильных используем отдельный интерфейс чата */
+            .chat-area-desktop {
+                display: none;
+            }
+            
+            .chat-area-mobile {
+                display: flex;
+            }
+        }
+
+        /* На ПК показываем боковую панель и область чата рядом */
+        @media (min-width: 769px) {
+            .app-panel {
+                flex-direction: row;
+            }
+            
+            .sidebar {
+                display: flex;
+            }
+            
+            .chat-area-desktop {
+                display: flex;
+            }
+            
+            .chat-area-mobile {
+                display: none;
+            }
+            
+            .back-button {
+                display: none;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1734,7 +1766,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             <div class="form-group">
                 <label style="display: flex; align-items: center; cursor: pointer;">
                     <input type="checkbox" id="rememberMe" style="margin-right: 8px; width: 16px; height: 16px;">
-                    <span style="font-size: 14px;">Запомнить меня</span>
+                    <span style="font-size: 14px;">Запомнить меня на этом устройстве</span>
                 </label>
             </div>
             
@@ -1762,6 +1794,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 <label for="registerPassword">Пароль</label>
                 <input type="password" id="registerPassword" placeholder="минимум 6 символов">
                 <div class="error-message" id="registerPasswordError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="rememberMeRegister" style="margin-right: 8px; width: 16px; height: 16px;">
+                    <span style="font-size: 14px;">Запомнить меня на этом устройстве</span>
+                </label>
             </div>
             
             <button class="btn" onclick="register()">Зарегистрироваться</button>
@@ -1792,12 +1831,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     </div>
                 </div>
                 
-                <!-- Для страницы чата: кнопка назад + название чата -->
-                <div class="top-nav-content" id="chatNav" style="display: none;">
+                <!-- Для мобильного интерфейса чата: кнопка назад + название чата -->
+                <div class="top-nav-content" id="chatNavMobile" style="display: none;">
                     <button class="back-button" onclick="goBackToMain()">
                         <i class="fas fa-arrow-left"></i>
                     </button>
-                    <div class="chat-title" id="chatTitleNav">Название чата</div>
+                    <div class="chat-title" id="chatTitleNavMobile">Название чата</div>
                     <div class="chat-actions-mini">
                         <button onclick="startAudioCall()" title="Аудиозвонок">
                             <i class="fas fa-phone"></i>
@@ -1809,7 +1848,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Боковая панель (только для главной страницы) -->
+            <!-- Боковая панель (только для ПК) -->
             <div class="sidebar" id="sidebar">
                 <!-- Информация о пользователе -->
                 <div class="user-info">
@@ -1818,6 +1857,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         <h3 id="userName">Тестовый Пользователь</h3>
                         <p id="userEmail">test@example.com</p>
                     </div>
+                    <button onclick="logout()" style="background: var(--error-color); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: auto;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
 
                 <!-- Содержимое вкладок -->
@@ -1844,10 +1886,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Основная область чата -->
-            <div class="chat-area" id="chatArea">
+            <!-- Область чата для ПК (справа от боковой панели) -->
+            <div class="chat-area-desktop" id="chatAreaDesktop">
                 <!-- Заглушка при отсутствии выбранного чата -->
-                <div id="chatPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
+                <div id="chatPlaceholderDesktop" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
                     <div style="text-align: center; padding: 20px;">
                         <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px;"></i>
                         <h3 style="margin-bottom: 10px; font-size: 18px;">Выберите чат</h3>
@@ -1855,20 +1897,35 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <!-- Интерфейс чата -->
-                <div id="chatInterface" style="display: none; height: 100%; flex-direction: column;">
-                    <div class="chat-messages" id="chatMessages">
+                <!-- Интерфейс чата для ПК -->
+                <div id="chatInterfaceDesktop" style="display: none; height: 100%; flex-direction: column;">
+                    <div style="padding: 15px; border-bottom: 1px solid var(--border-color); background: white; display: flex; align-items: center;">
+                        <div style="flex: 1;">
+                            <h3 id="chatTitleDesktop" style="font-size: 18px; margin-bottom: 4px;">Название чата</h3>
+                            <div id="chatStatusDesktop" style="font-size: 12px; color: var(--text-secondary);">...</div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="startAudioCall()" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 18px;">
+                                <i class="fas fa-phone"></i>
+                            </button>
+                            <button onclick="showChatInfo()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 18px;">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessagesDesktop">
                         <div class="empty-state">Сообщений пока нет</div>
                     </div>
                     
                     <!-- Индикатор печати -->
-                    <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-indicator" id="typingIndicatorDesktop">
                         <div class="typing-dots">
                             <div class="typing-dot"></div>
                             <div class="typing-dot"></div>
                             <div class="typing-dot"></div>
                         </div>
-                        <span id="typingText">Печатает...</span>
+                        <span id="typingTextDesktop">Печатает...</span>
                     </div>
                     
                     <!-- Область ввода сообщения -->
@@ -1877,7 +1934,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                             <button onclick="toggleAttachmentMenu()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px; margin-right: 10px;">
                                 <i class="fas fa-paperclip"></i>
                             </button>
-                            <div class="attachment-menu" id="attachmentMenu">
+                            <div class="attachment-menu" id="attachmentMenuDesktop">
                                 <div class="attachment-option" onclick="attachFile()">
                                     <i class="fas fa-file"></i>
                                     <span>Прикрепить файл</span>
@@ -1898,13 +1955,84 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         </div>
                         
                         <div class="chat-input">
-                            <input type="text" id="messageInput" placeholder="Введите сообщение..." 
+                            <input type="text" id="messageInputDesktop" placeholder="Введите сообщение..." 
                                    oninput="handleTyping()" onkeypress="handleKeyPress(event)">
                             <div class="input-hint">
                                 <i class="fas fa-microphone"></i> Удерживайте для записи
                             </div>
                         </div>
-                        <button class="send-button" id="sendButton" 
+                        <button class="send-button" id="sendButtonDesktop" 
+                                onmousedown="startVoiceRecording(event)" 
+                                ontouchstart="startVoiceRecording(event)"
+                                onmouseup="stopVoiceRecording(event)"
+                                ontouchend="stopVoiceRecording(event)">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Область чата для мобильных (отдельный экран) -->
+            <div class="chat-area-mobile" id="chatAreaMobile">
+                <!-- Заглушка при отсутствии выбранного чата -->
+                <div id="chatPlaceholderMobile" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px;"></i>
+                        <h3 style="margin-bottom: 10px; font-size: 18px;">Выберите чат</h3>
+                        <p style="font-size: 14px;">Начните общение с контактом</p>
+                    </div>
+                </div>
+
+                <!-- Интерфейс чата для мобильных -->
+                <div id="chatInterfaceMobile" style="display: none; height: 100%; flex-direction: column;">
+                    <div class="chat-messages" id="chatMessagesMobile">
+                        <div class="empty-state">Сообщений пока нет</div>
+                    </div>
+                    
+                    <!-- Индикатор печати -->
+                    <div class="typing-indicator" id="typingIndicatorMobile">
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                        <span id="typingTextMobile">Печатает...</span>
+                    </div>
+                    
+                    <!-- Область ввода сообщения -->
+                    <div class="chat-input-area">
+                        <div class="attachment-btn">
+                            <button onclick="toggleAttachmentMenu()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px; margin-right: 10px;">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <div class="attachment-menu" id="attachmentMenuMobile">
+                                <div class="attachment-option" onclick="attachFile()">
+                                    <i class="fas fa-file"></i>
+                                    <span>Прикрепить файл</span>
+                                </div>
+                                <div class="attachment-option" onclick="attachImage()">
+                                    <i class="fas fa-image"></i>
+                                    <span>Прикрепить изображение</span>
+                                </div>
+                                <div class="attachment-option" onclick="attachDocument()">
+                                    <i class="fas fa-file-pdf"></i>
+                                    <span>Документ PDF</span>
+                                </div>
+                                <div class="attachment-option" onclick="attachVideo()">
+                                    <i class="fas fa-video"></i>
+                                    <span>Видео файл</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input">
+                            <input type="text" id="messageInputMobile" placeholder="Введите сообщение..." 
+                                   oninput="handleTyping()" onkeypress="handleKeyPress(event)">
+                            <div class="input-hint">
+                                <i class="fas fa-microphone"></i> Удерживайте для записи
+                            </div>
+                        </div>
+                        <button class="send-button" id="sendButtonMobile" 
                                 onmousedown="startVoiceRecording(event)" 
                                 ontouchstart="startVoiceRecording(event)"
                                 onmouseup="stopVoiceRecording(event)"
@@ -2015,13 +2143,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         <i class="fas fa-user-plus"></i>
     </button>
 
-    <!-- Панель отладки -->
-    <div class="debug-panel" id="debugPanel">
-        <div><strong>WebRTC Отладка:</strong></div>
-        <div id="debugInfo">Загрузка...</div>
-        <button onclick="toggleDebug()" style="margin-top: 5px; padding: 2px 5px; font-size: 10px;">Скрыть</button>
-    </div>
-
     <script>
         let currentUser = null;
         let token = null;
@@ -2040,6 +2161,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let isTyping = false;
         let uploadQueue = [];
         let isUploading = false;
+        let deviceId = null;
+        let isMobile = false;
         
         // Переменные для аудиозвонков
         let peerConnection = null;
@@ -2066,48 +2189,62 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         console.log('Base URL:', baseUrl);
         console.log('WebSocket URL:', wsUrl);
 
-        // Функция сохранения токена
-        function saveToken(token) {
-            try {
-                localStorage.setItem('beresta_token', token);
-            } catch (e) {
-                console.warn('Не удалось сохранить токен в localStorage:', e);
+        // Определяем устройство при загрузке
+        function detectDevice() {
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            console.log('Устройство:', isMobile ? 'Мобильное' : 'ПК');
+            return isMobile;
+        }
+
+        // Генерация уникального ID устройства
+        function generateDeviceId() {
+            // Пробуем получить сохраненный deviceId
+            let deviceId = localStorage.getItem('beresta_device_id');
+            
+            if (!deviceId) {
+                // Генерируем новый deviceId
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('beresta_device_id', deviceId);
+            }
+            
+            return deviceId;
+        }
+
+        // Функция сохранения токена с привязкой к устройству
+        function saveToken(token, rememberMe) {
+            if (rememberMe && deviceId) {
+                try {
+                    localStorage.setItem('beresta_token_' + deviceId, token);
+                    localStorage.setItem('beresta_remember_me_' + deviceId, 'true');
+                } catch (e) {
+                    console.warn('Не удалось сохранить токен в localStorage:', e);
+                }
+            } else {
+                // Если не "запомнить меня", сохраняем только на текущую сессию
+                sessionStorage.setItem('beresta_token', token);
             }
         }
 
-        // Функция загрузки сохраненного токена
+        // Функция загрузки сохраненного токена для текущего устройства
         function loadToken() {
-            try {
-                return localStorage.getItem('beresta_token');
-            } catch (e) {
-                console.warn('Не удалось загрузить токен из localStorage:', e);
-                return null;
+            // Сначала проверяем sessionStorage (текущая сессия)
+            let token = sessionStorage.getItem('beresta_token');
+            
+            if (!token && deviceId) {
+                // Если нет в sessionStorage, проверяем localStorage для этого устройства
+                const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
+                if (rememberMe === 'true') {
+                    token = localStorage.getItem('beresta_token_' + deviceId);
+                }
             }
-        }
-
-        // Функция сохранения флага "запомнить меня"
-        function saveRememberMe(value) {
-            try {
-                localStorage.setItem('beresta_remember_me', value ? 'true' : 'false');
-            } catch (e) {
-                console.warn('Не удалось сохранить настройку:', e);
-            }
-        }
-
-        // Функция загрузки флага "запомнить меня"
-        function loadRememberMe() {
-            try {
-                return localStorage.getItem('beresta_remember_me') === 'true';
-            } catch (e) {
-                console.warn('Не удалось загрузить настройку:', e);
-                return false;
-            }
+            
+            return token;
         }
 
         // Функция сохранения email
         function saveEmail(email) {
             try {
-                localStorage.setItem('beresta_email', email);
+                localStorage.setItem('beresta_email_' + deviceId, email);
             } catch (e) {
                 console.warn('Не удалось сохранить email:', e);
             }
@@ -2116,19 +2253,22 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Функция загрузки email
         function loadEmail() {
             try {
-                return localStorage.getItem('beresta_email');
+                return localStorage.getItem('beresta_email_' + deviceId);
             } catch (e) {
                 console.warn('Не удалось загрузить email:', e);
                 return null;
             }
         }
 
-        // Функция очистки сохраненных данных
+        // Функция очистки сохраненных данных для текущего устройства
         function clearSavedData() {
             try {
-                localStorage.removeItem('beresta_token');
-                localStorage.removeItem('beresta_email');
-                localStorage.removeItem('beresta_remember_me');
+                if (deviceId) {
+                    localStorage.removeItem('beresta_token_' + deviceId);
+                    localStorage.removeItem('beresta_remember_me_' + deviceId);
+                    localStorage.removeItem('beresta_email_' + deviceId);
+                }
+                sessionStorage.removeItem('beresta_token');
             } catch (e) {
                 console.warn('Не удалось очистить сохраненные данные:', e);
             }
@@ -2136,20 +2276,21 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Автоматический вход при загрузке страницы
         async function autoLogin() {
+            deviceId = generateDeviceId();
             const savedToken = loadToken();
             const savedEmail = loadEmail();
-            const rememberMe = loadRememberMe();
             
-            if (savedToken && savedEmail && rememberMe) {
-                console.log('Попытка автоматического входа...');
+            if (savedToken && savedEmail) {
+                console.log('Попытка автоматического входа для устройства:', deviceId);
                 
                 try {
-                    // Проверяем токен
+                    // Проверяем токен и регистрируем устройство
                     const response = await fetch(baseUrl + '/api/validate-token', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + savedToken
+                            'Authorization': 'Bearer ' + savedToken,
+                            'X-Device-Id': deviceId
                         }
                     });
                     
@@ -2192,11 +2333,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 }
             }
             
-            // Если автоматический вход не удался, показываем форму входа
+            // Если автоматический вход не удался
             if (savedEmail) {
                 document.getElementById('loginEmail').value = savedEmail;
             }
-            if (rememberMe) {
+            
+            // Проверяем, было ли ранее выбрано "запомнить меня" для этого устройства
+            const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
+            if (rememberMe === 'true') {
                 document.getElementById('rememberMe').checked = true;
             }
             
@@ -2213,7 +2357,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 console.log('WebSocket connected to:', wsUrl);
                 ws.send(JSON.stringify({
                     type: 'authenticate',
-                    token: token
+                    token: token,
+                    deviceId: deviceId
                 }));
             };
 
@@ -2346,9 +2491,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 const response = await fetch(baseUrl + '/api/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Device-Id': deviceId
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, rememberMe })
                 });
 
                 const data = await response.json();
@@ -2359,12 +2505,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     // Сохраняем данные если выбрано "запомнить меня"
                     if (rememberMe) {
-                        saveToken(token);
+                        saveToken(token, true);
                         saveEmail(email);
-                        saveRememberMe(true);
                     } else {
-                        // Очищаем сохраненные данные
-                        clearSavedData();
+                        saveToken(token, false);
                     }
                     
                     // Обновляем информацию о пользователе
@@ -2422,6 +2566,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const username = document.getElementById('registerUsername').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMeRegister').checked;
             
             clearErrors();
             
@@ -2444,9 +2589,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 const response = await fetch(baseUrl + '/api/register', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Device-Id': deviceId
                     },
-                    body: JSON.stringify({ username, email, password })
+                    body: JSON.stringify({ username, email, password, rememberMe })
                 });
 
                 const data = await response.json();
@@ -2456,9 +2602,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     currentUser = data.user;
                     
                     // Сохраняем данные для автоматического входа
-                    saveToken(token);
+                    saveToken(token, rememberMe);
                     saveEmail(email);
-                    saveRememberMe(true);
                     
                     // Обновляем информацию о пользователе
                     document.getElementById('userName').textContent = currentUser.username;
@@ -2493,7 +2638,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Функция выхода
         function logout() {
-            // Очищаем сохраненные данные
+            // Отправляем запрос на сервер для удаления сессии
+            fetch(baseUrl + '/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'X-Device-Id': deviceId
+                }
+            }).catch(() => {}); // Игнорируем ошибки при выходе
+            
+            // Очищаем сохраненные данные для этого устройства
             clearSavedData();
             
             // Закрываем WebSocket соединение
@@ -2524,14 +2678,31 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Функции навигации
         function showMainPage() {
-            // Показываем боковую панель и главную страницу
-            document.getElementById('sidebar').style.display = 'flex';
-            document.getElementById('chatInterface').style.display = 'none';
-            document.getElementById('chatPlaceholder').style.display = 'flex';
+            const isMobileDevice = detectDevice();
             
-            // Обновляем верхнюю навигацию
-            document.getElementById('mainNav').style.display = 'flex';
-            document.getElementById('chatNav').style.display = 'none';
+            if (isMobileDevice) {
+                // На мобильных: скрываем интерфейс чата, показываем список чатов
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('chatInterfaceMobile').style.display = 'none';
+                document.getElementById('chatPlaceholderMobile').style.display = 'flex';
+                document.getElementById('chatAreaDesktop').style.display = 'none';
+                document.getElementById('chatAreaMobile').style.display = 'flex';
+                
+                // Обновляем верхнюю навигацию
+                document.getElementById('mainNav').style.display = 'flex';
+                document.getElementById('chatNavMobile').style.display = 'none';
+            } else {
+                // На ПК: показываем боковую панель и область чата
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('chatInterfaceDesktop').style.display = 'none';
+                document.getElementById('chatPlaceholderDesktop').style.display = 'flex';
+                document.getElementById('chatAreaDesktop').style.display = 'flex';
+                document.getElementById('chatAreaMobile').style.display = 'none';
+                
+                // Обновляем верхнюю навигацию
+                document.getElementById('mainNav').style.display = 'flex';
+                document.getElementById('chatNavMobile').style.display = 'none';
+            }
             
             // Обновляем списки
             loadChats();
@@ -2565,13 +2736,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         function toggleAttachmentMenu() {
-            const menu = document.getElementById('attachmentMenu');
+            const menu = isMobile ? document.getElementById('attachmentMenuMobile') : document.getElementById('attachmentMenuDesktop');
             menu.classList.toggle('show');
         }
 
         function hideAttachmentMenu() {
-            const menu = document.getElementById('attachmentMenu');
-            menu.classList.remove('show');
+            document.querySelectorAll('.attachment-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
         }
 
         // Функции для прикрепления файлов
@@ -2889,15 +3061,31 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Работа с чатами
         async function openChat(chatId) {
             currentChatId = chatId;
+            const isMobileDevice = detectDevice();
             
-            // Скрываем главную страницу
-            document.getElementById('sidebar').style.display = 'none';
-            document.getElementById('chatPlaceholder').style.display = 'none';
-            document.getElementById('chatInterface').style.display = 'flex';
-            
-            // Обновляем верхнюю навигацию
-            document.getElementById('mainNav').style.display = 'none';
-            document.getElementById('chatNav').style.display = 'flex';
+            if (isMobileDevice) {
+                // На мобильных: переключаемся на отдельный экран чата
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('chatPlaceholderMobile').style.display = 'none';
+                document.getElementById('chatInterfaceMobile').style.display = 'flex';
+                document.getElementById('chatAreaDesktop').style.display = 'none';
+                document.getElementById('chatAreaMobile').style.display = 'flex';
+                
+                // Обновляем верхнюю навигацию
+                document.getElementById('mainNav').style.display = 'none';
+                document.getElementById('chatNavMobile').style.display = 'flex';
+            } else {
+                // На ПК: показываем чат в правой панели
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('chatPlaceholderDesktop').style.display = 'none';
+                document.getElementById('chatInterfaceDesktop').style.display = 'flex';
+                document.getElementById('chatAreaDesktop').style.display = 'flex';
+                document.getElementById('chatAreaMobile').style.display = 'none';
+                
+                // Обновляем верхнюю навигацию
+                document.getElementById('mainNav').style.display = 'flex';
+                document.getElementById('chatNavMobile').style.display = 'none';
+            }
             
             // Скрываем кнопку добавления при переходе в чат
             document.getElementById('addContactBtn').style.display = 'none';
@@ -2909,11 +3097,19 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const chat = chats.find(c => c.chat_id === chatId);
             if (chat) {
                 const chatName = chat.chat_name || chat.other_user_name || 'Личный чат';
-                document.getElementById('chatTitleNav').textContent = chatName;
+                if (isMobileDevice) {
+                    document.getElementById('chatTitleNavMobile').textContent = chatName;
+                } else {
+                    document.getElementById('chatTitleDesktop').textContent = chatName;
+                }
             }
             
             // Фокус на поле ввода
-            document.getElementById('messageInput').focus();
+            if (isMobileDevice) {
+                document.getElementById('messageInputMobile').focus();
+            } else {
+                document.getElementById('messageInputDesktop').focus();
+            }
             
             // Восстанавливаем состояние аудиоплееров
             restoreAudioPlayers();
@@ -2939,7 +3135,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         function displayMessages(messages) {
-            const container = document.getElementById('chatMessages');
+            const isMobileDevice = detectDevice();
+            const container = isMobileDevice ? 
+                document.getElementById('chatMessagesMobile') : 
+                document.getElementById('chatMessagesDesktop');
             
             if (!messages || messages.length === 0) {
                 container.innerHTML = '<div class="empty-state">Сообщений пока нет</div>';
@@ -3005,7 +3204,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         function displayMessage(message) {
-            const container = document.getElementById('chatMessages');
+            const isMobileDevice = detectDevice();
+            const container = isMobileDevice ? 
+                document.getElementById('chatMessagesMobile') : 
+                document.getElementById('chatMessagesDesktop');
             
             // Убираем сообщение "Сообщений пока нет"
             if (container.querySelector('.empty-state')) {
@@ -3081,8 +3283,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         async function startVoiceRecording(e) {
             e.preventDefault();
             
-            const input = document.getElementById('messageInput');
-            const sendButton = document.getElementById('sendButton');
+            const isMobileDevice = detectDevice();
+            const input = isMobileDevice ? 
+                document.getElementById('messageInputMobile') : 
+                document.getElementById('messageInputDesktop');
+            const sendButton = isMobileDevice ? 
+                document.getElementById('sendButtonMobile') : 
+                document.getElementById('sendButtonDesktop');
             
             // Если есть текст в поле ввода, отправляем его при клике
             if (input.value.trim() && !isRecording) {
@@ -3120,7 +3327,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     stream.getTracks().forEach(track => track.stop());
     
                     // Сбрасываем состояние кнопки сразу после остановки записи
-                    const sendButton = document.getElementById('sendButton');
                     sendButton.classList.remove('recording');
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
                     sendButton.style.background = 'var(--primary-color)';
@@ -3166,7 +3372,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 if (elapsed < 1) {
                     showNotification('Запись отменена', 'info');
                     // Сбрасываем состояние кнопки
-                    const sendButton = document.getElementById('sendButton');
+                    const isMobileDevice = detectDevice();
+                    const sendButton = isMobileDevice ? 
+                        document.getElementById('sendButtonMobile') : 
+                        document.getElementById('sendButtonDesktop');
                     sendButton.classList.remove('recording');
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
                     sendButton.style.background = 'var(--primary-color)';
@@ -3233,7 +3442,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Добавляем функцию для сброса состояния кнопки отправки
         function resetSendButton() {
-            const sendButton = document.getElementById('sendButton');
+            const isMobileDevice = detectDevice();
+            const sendButton = isMobileDevice ? 
+                document.getElementById('sendButtonMobile') : 
+                document.getElementById('sendButtonDesktop');
             sendButton.classList.remove('recording');
             sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
             sendButton.style.background = 'var(--primary-color)';
@@ -3329,7 +3541,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Отправка сообщений
         async function sendMessage() {
-            const input = document.getElementById('messageInput');
+            const isMobileDevice = detectDevice();
+            const input = isMobileDevice ? 
+                document.getElementById('messageInputMobile') : 
+                document.getElementById('messageInputDesktop');
             const content = input.value.trim();
             
             if (!content || !currentChatId || !ws) return;
@@ -3360,7 +3575,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Индикатор печати
         function handleTyping() {
-            const input = document.getElementById('messageInput');
+            const isMobileDevice = detectDevice();
+            const input = isMobileDevice ? 
+                document.getElementById('messageInputMobile') : 
+                document.getElementById('messageInputDesktop');
             
             if (!isTyping && input.value.trim()) {
                 isTyping = true;
@@ -3383,8 +3601,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         function showTypingIndicator(username) {
-            const indicator = document.getElementById('typingIndicator');
-            const typingText = document.getElementById('typingText');
+            const isMobileDevice = detectDevice();
+            const indicator = isMobileDevice ? 
+                document.getElementById('typingIndicatorMobile') : 
+                document.getElementById('typingIndicatorDesktop');
+            const typingText = isMobileDevice ? 
+                document.getElementById('typingTextMobile') : 
+                document.getElementById('typingTextDesktop');
             
             typingText.textContent = username + ' печатает...';
             indicator.classList.add('show');
@@ -3396,7 +3619,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         function hideTypingIndicator() {
-            const indicator = document.getElementById('typingIndicator');
+            const isMobileDevice = detectDevice();
+            const indicator = isMobileDevice ? 
+                document.getElementById('typingIndicatorMobile') : 
+                document.getElementById('typingIndicatorDesktop');
             indicator.classList.remove('show');
         }
 
@@ -4004,13 +4230,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 console.error('Ошибка получения ID собеседника:', error);
             }
             
-            // Запасной вариант: пытаемся определить из списка чатов
-            const chat = chats.find(c => c.chat_id === currentChatId);
-            if (chat && chat.other_user_name) {
-                // Возвращаем ID второго тестового пользователя для демонстрации
-                return currentUser.email === 'test@example.com' ? 2 : 1;
-            }
-            
             return null;
         }
 
@@ -4182,33 +4401,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             showNotification('Звонок завершен', 'info');
         }
 
-        // Отладка WebRTC
-        function updateDebugInfo() {
-            if (!debugMode) return;
-            
-            const debugInfo = document.getElementById('debugInfo');
-            let info = '';
-            
-            info += 'WebSocket: ' + (ws ? ws.readyState : 'Не подключен') + '\\n';
-            info += 'PeerConnection: ' + (peerConnection ? peerConnection.connectionState : 'Нет') + '\\n';
-            info += 'Локальный поток: ' + (localStream ? localStream.getTracks().length + ' треков' : 'Нет') + '\\n';
-            info += 'Удаленный поток: ' + (remoteStream ? remoteStream.getTracks().length + ' треков' : 'Нет') + '\\n';
-            info += 'В звонке: ' + (isInCall ? 'Да' : 'Нет') + '\\n';
-            info += 'Вызывающий: ' + (isCaller ? 'Да' : 'Нет') + '\\n';
-            info += 'ICE кандидатов в очереди: ' + iceCandidatesQueue.length;
-            
-            debugInfo.textContent = info;
-        }
-
-        function toggleDebug() {
-            debugMode = !debugMode;
-            document.getElementById('debugPanel').classList.toggle('show');
-            
-            if (debugMode) {
-                setInterval(updateDebugInfo, 1000);
-            }
-        }
-
         // Уведомления
         function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
@@ -4261,16 +4453,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Инициализация при загрузке
         window.onload = async function() {
-            // Автоматически заполняем тестовые данные
-            const savedEmail = loadEmail();
-            if (!savedEmail) {
-                document.getElementById('loginEmail').value = 'test@example.com';
-                document.getElementById('loginPassword').value = 'password123';
-            }
+            // Определяем устройство
+            isMobile = detectDevice();
             
-            // Загружаем настройку "запомнить меня"
-            const rememberMe = loadRememberMe();
-            document.getElementById('rememberMe').checked = rememberMe;
+            // Генерируем/получаем ID устройства
+            deviceId = generateDeviceId();
+            console.log('ID устройства:', deviceId);
             
             // Пробуем выполнить автоматический вход
             const autoLoggedIn = await autoLogin();
@@ -4303,19 +4491,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             console.log('Application initialized');
             console.log('Base URL:', baseUrl);
             console.log('WebSocket URL:', wsUrl);
-            
-            // Добавляем обработчик для отладки по Ctrl+D
-            document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && e.key === 'd') {
-                    e.preventDefault();
-                    toggleDebug();
-                }
-            });
+            console.log('Тип устройства:', isMobile ? 'Мобильное' : 'ПК');
 
-            // Определяем мобильное устройство
-            if (/Mobi|Android/i.test(navigator.userAgent)) {
+            // Для мобильных устройств
+            if (isMobile) {
                 document.body.classList.add('mobile-device');
-                console.log('Мобильное устройство обнаружено (Android)');
+                console.log('Мобильное устройство обнаружено');
                 
                 // Устанавливаем корректную высоту для мобильных устройств
                 function setMobileHeight() {
@@ -4326,76 +4507,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 setMobileHeight();
                 window.addEventListener('resize', setMobileHeight);
                 window.addEventListener('orientationchange', setMobileHeight);
-                
-                // Исправление для Android Chrome - предотвращение выхода за границы
-                const androidStyle = document.createElement('style');
-                androidStyle.textContent = \`
-                    .mobile-device .auth-panel {
-                        max-height: calc(var(--vh, 1vh) * 95);
-                        overflow-y: auto;
-                        -webkit-overflow-scrolling: touch;
-                    }
-                    
-                    .mobile-device .app-panel {
-                        max-height: calc(var(--vh, 1vh) * 100);
-                    }
-                    
-                    .mobile-device .chat-messages,
-                    .mobile-device .panel-content {
-                        -webkit-overflow-scrolling: touch;
-                    }
-                    
-                    /* Увеличиваем размеры некоторых элементов для лучшей читаемости на Android */
-                    .mobile-device .form-group input,
-                    .mobile-device .btn {
-                        font-size: 16px !important;
-                    }
-                    
-                    .mobile-device .chat-input input {
-                        font-size: 16px !important;
-                        padding: 12px 16px !important;
-                    }
-                    
-                    .mobile-device .list-item-title {
-                        font-size: 15px !important;
-                    }
-                    
-                    .mobile-device .contact-info h4 {
-                        font-size: 15px !important;
-                    }
-                    
-                    /* Уменьшаем паддинги для очень маленьких экранов */
-                    @media (max-height: 600px) {
-                        .mobile-device .auth-panel {
-                            padding: 15px;
-                        }
-                        
-                        .mobile-device .form-group {
-                            margin-bottom: 12px;
-                        }
-                        
-                        .mobile-device .form-group input,
-                        .mobile-device .btn {
-                            padding: 10px 12px;
-                        }
-                    }
-                    
-                    /* Исправление для клавиатуры Android */
-                    .mobile-device .chat-input-area {
-                        padding-bottom: calc(15px + env(safe-area-inset-bottom));
-                    }
-                \`;
-                document.head.appendChild(androidStyle);
             }
             
-            // Добавляем кнопку выхода в меню пользователя
-            const userInfo = document.querySelector('.user-info');
-            if (userInfo) {
-                const logoutBtn = document.createElement('button');
-                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Выйти';
-                logoutBtn.style.cssText = 'background: var(--error-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: auto;';
-                logoutBtn.onclick = logout;
-                userInfo.appendChild(logoutBtn);
+            // Добавляем обработчик для выхода по Ctrl+Q на ПК
+            if (!isMobile) {
+                document.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && e.key === 'q') {
+                        e.preventDefault();
+                        logout();
+                    }
+                });
             }
         };
     </script>
@@ -4407,7 +4528,7 @@ const server = http.createServer((req, res) => {
     // CORS заголовки
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id');
     
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
@@ -4422,6 +4543,8 @@ const server = http.createServer((req, res) => {
         parseJSON(req, res, () => handleLogin(req, res));
     } else if (req.url === '/api/validate-token' && req.method === 'POST') {
         parseJSON(req, res, () => handleValidateToken(req, res));
+    } else if (req.url === '/api/logout' && req.method === 'POST') {
+        parseJSON(req, res, () => handleLogout(req, res));
     } else if (req.url === '/api/contacts' && req.method === 'GET') {
         parseJSON(req, res, () => {
             authenticate(req, res, () => handleGetContacts(req, res));
@@ -4862,7 +4985,8 @@ function serveFile(req, res) {
 
 // Обработчики HTTP запросов
 async function handleRegister(req, res) {
-    const { email, username, password } = req.body;
+    const { email, username, password, rememberMe } = req.body;
+    const deviceId = req.headers['x-device-id'];
     
     if (!email || !username || !password) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -4903,17 +5027,34 @@ async function handleRegister(req, res) {
                         return;
                     }
                     
+                    const userId = this.lastID;
                     const token = jwt.sign(
-                        { userId: this.lastID, email },
+                        { userId: userId, email },
                         JWT_SECRET,
-                        { expiresIn: '7d' }
+                        { expiresIn: '30d' }
                     );
+                    
+                    // Если выбрано "запомнить меня", сохраняем сессию
+                    if (rememberMe && deviceId) {
+                        const expiresAt = new Date();
+                        expiresAt.setDate(expiresAt.getDate() + 30); // 30 дней
+                        
+                        db.run(
+                            'INSERT OR REPLACE INTO user_sessions (user_id, device_id, token, expires_at) VALUES (?, ?, ?, ?)',
+                            [userId, deviceId, token, expiresAt.toISOString()],
+                            (err) => {
+                                if (err) {
+                                    console.error('Error saving session:', err);
+                                }
+                            }
+                        );
+                    }
                     
                     res.writeHead(201, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ 
                         success: true, 
                         token,
-                        user: { id: this.lastID, email, username }
+                        user: { id: userId, email, username }
                     }));
                 }
             );
@@ -4922,7 +5063,8 @@ async function handleRegister(req, res) {
 }
 
 async function handleLogin(req, res) {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
+    const deviceId = req.headers['x-device-id'];
     
     db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
         if (err || !user) {
@@ -4941,8 +5083,24 @@ async function handleLogin(req, res) {
             const token = jwt.sign(
                 { userId: user.id, email: user.email },
                 JWT_SECRET,
-                { expiresIn: '7d' }
+                { expiresIn: '30d' }
             );
+            
+            // Если выбрано "запомнить меня", сохраняем сессию
+            if (rememberMe && deviceId) {
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + 30); // 30 дней
+                
+                db.run(
+                    'INSERT OR REPLACE INTO user_sessions (user_id, device_id, token, expires_at) VALUES (?, ?, ?, ?)',
+                    [user.id, deviceId, token, expiresAt.toISOString()],
+                    (err) => {
+                        if (err) {
+                            console.error('Error saving session:', err);
+                        }
+                    }
+                );
+            }
             
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ 
@@ -4954,9 +5112,10 @@ async function handleLogin(req, res) {
     });
 }
 
-// Валидация токена
+// Валидация токена с проверкой сессии устройства
 async function handleValidateToken(req, res) {
     const authHeader = req.headers.authorization;
+    const deviceId = req.headers['x-device-id'];
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -4969,23 +5128,85 @@ async function handleValidateToken(req, res) {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         
-        db.get('SELECT id, email, username FROM users WHERE id = ?', [decoded.userId], (err, user) => {
-            if (err || !user) {
-                res.writeHead(401, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ valid: false, error: 'User not found' }));
-                return;
-            }
-            
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ 
-                valid: true,
-                user: { id: user.id, email: user.email, username: user.username }
-            }));
-        });
+        // Проверяем сессию устройства, если предоставлен deviceId
+        if (deviceId) {
+            db.get(
+                'SELECT token FROM user_sessions WHERE user_id = ? AND device_id = ? AND expires_at > ?',
+                [decoded.userId, deviceId, new Date().toISOString()],
+                (err, session) => {
+                    if (err || !session || session.token !== token) {
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ valid: false, error: 'Session expired or invalid' }));
+                        return;
+                    }
+                    
+                    // Сессия валидна, получаем данные пользователя
+                    getUserAndRespond(decoded.userId, res);
+                }
+            );
+        } else {
+            // Если нет deviceId, просто проверяем пользователя
+            getUserAndRespond(decoded.userId, res);
+        }
     } catch (error) {
         console.error('Token verification error:', error);
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ valid: false, error: 'Invalid token' }));
+    }
+}
+
+// Вспомогательная функция для получения пользователя и отправки ответа
+function getUserAndRespond(userId, res) {
+    db.get('SELECT id, email, username FROM users WHERE id = ?', [userId], (err, user) => {
+        if (err || !user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ valid: false, error: 'User not found' }));
+            return;
+        }
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+            valid: true,
+            user: { id: user.id, email: user.email, username: user.username }
+        }));
+    });
+}
+
+// Выход из системы с удалением сессии устройства
+async function handleLogout(req, res) {
+    const authHeader = req.headers.authorization;
+    const deviceId = req.headers['x-device-id'];
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'No token provided' }));
+        return;
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Удаляем сессию устройства
+        if (deviceId) {
+            db.run(
+                'DELETE FROM user_sessions WHERE user_id = ? AND device_id = ?',
+                [decoded.userId, deviceId],
+                (err) => {
+                    if (err) {
+                        console.error('Error deleting session:', err);
+                    }
+                }
+            );
+        }
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Logged out successfully' }));
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid token' }));
     }
 }
 
@@ -5314,6 +5535,7 @@ wss.on('connection', (ws, req) => {
     ws.isAuthenticated = false;
     ws.userId = null;
     ws.userInfo = null;
+    ws.deviceId = null;
     ws.callData = null;
     ws.callAnswer = null;
     
@@ -5335,10 +5557,11 @@ wss.on('connection', (ws, req) => {
                         ws.isAuthenticated = true;
                         ws.userId = user.id;
                         ws.userInfo = user;
+                        ws.deviceId = message.deviceId;
                         
                         clients.set(user.id, ws);
                         
-                        console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id);
+                        console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id + ' Устройство: ' + message.deviceId);
                         
                         ws.send(JSON.stringify({
                             type: 'authenticated',
@@ -5632,7 +5855,7 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
         if (ws.isAuthenticated && ws.userId) {
-            console.log('Отключение пользователя ID: ' + ws.userId);
+            console.log('Отключение пользователя ID: ' + ws.userId + ' с устройства: ' + ws.deviceId);
             
             // Если пользователь был в звонке, уведомляем другого участника
             if (ws.callData) {
@@ -5706,16 +5929,15 @@ server.listen(PORT, () => {
         console.log('🔗 WebSocket URL:', 'wss://' + process.env.RENDER_EXTERNAL_HOSTNAME);
     }
     
-    console.log('\n👥 Доступные тестовые аккаунты:');
-    console.log('1. Email: test@example.com, Пароль: password123 (Тестовый Пользователь)');
-    console.log('2. Email: user2@example.com, Пароль: password123 (Второй Пользователь)');
+    console.log('\n📱 Адаптивный интерфейс:');
+    console.log('• На ПК: боковая панель + область чата справа');
+    console.log('• На мобильных: отдельный экран чата');
+    console.log('• Автоматический вход с сохранением на устройстве');
     
-    console.log('\n📱 Новый интерфейс:');
-    console.log('• Сразу виден список чатов');
-    console.log('• Переключатель между чатами и контактами');
-    console.log('• Кнопка "Назад" в чате для возврата к списку');
-    console.log('• Кнопка добавления контакта только на вкладке контактов');
-    console.log('• Сохранение входа (опция "запомнить меня")');
+    console.log('\n🔐 Автоматический вход:');
+    console.log('• Сохранение токена с привязкой к устройству');
+    console.log('• Опция "Запомнить меня на этом устройстве"');
+    console.log('• Удаление сессии при выходе');
     
     console.log('\n📞 Аудиозвонки:');
     console.log('• Двусторонняя аудиосвязь через WebRTC');
