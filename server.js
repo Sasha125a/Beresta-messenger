@@ -5125,6 +5125,37 @@ wss.on('connection', (ws, req) => {
     });
 });
 
+// ========== САМО-ПИНГ ДЛЯ RENDER.COM ==========
+function startSelfPing() {
+    const selfUrl = 'https://beresta-messenger-web.onrender.com';
+    
+    // Функция для выполнения пинга
+    const pingSelf = async () => {
+        try {
+            console.log('🔔 Выполняю само-пинг...');
+            const response = await fetch(selfUrl + '/health');
+            const data = await response.text();
+            console.log('✅ Само-пинг успешен:', response.status, data);
+        } catch (error) {
+            console.error('❌ Ошибка само-пинга:', error.message);
+        }
+    };
+    
+    // Выполняем пинг сразу при запуске
+    pingSelf();
+    
+    // Устанавливаем интервал пинга каждые 5 минут (300000 мс)
+    // Render.com отключает инстансы после 15 минут неактивности
+    setInterval(pingSelf, 5 * 60 * 1000);
+    
+    console.log('🔄 Само-пинг активирован: каждые 5 минут');
+}
+
+// Запускаем само-пинг только в production режиме
+if (process.env.NODE_ENV === 'production') {
+    startSelfPing();
+}
+
 // Запускаем сервер
 server.listen(PORT, () => {
     console.log('🚀 Сервер Береста запущен!');
@@ -5184,4 +5215,5 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
 
