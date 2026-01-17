@@ -180,15 +180,15 @@ function authenticate(req, res, next) {
     }
 }
 
-// HTML шаблон с измененным интерфейсом
-// HTML шаблон с измененным интерфейсом
+// HTML шаблон с исправленным интерфейсом для Android и сохранением входа
 const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
     <title>Береста - Мессенджер</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -244,10 +244,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
+            max-height: 100vh;
             padding: 40px 30px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .app-panel {
@@ -496,6 +499,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             flex-direction: column;
             flex-shrink: 0;
             height: 100%;
+            overflow: hidden;
         }
 
         .user-info {
@@ -504,6 +508,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .user-avatar {
@@ -537,6 +542,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             flex-direction: column;
             min-height: 0;
             height: 100%;
+            overflow: hidden;
         }
 
         .panel-content {
@@ -545,6 +551,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             padding: 15px;
             display: none;
             height: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         .panel-content.active {
@@ -616,6 +623,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             min-height: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
 
         .chat-messages {
@@ -626,6 +634,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             height: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
@@ -1274,262 +1283,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border: 1px solid #fecaca;
         }
 
-        /* Адаптивность для мобильных устройств */
-        @media (max-width: 768px) {
-            body {
-                padding: 5px;
-            }
-
-            .auth-panel {
-                padding: 30px 20px;
-                border-radius: 15px;
-            }
-
-            .app-panel {
-                border-radius: 15px;
-                max-height: 95vh;
-            }
-
-            .sidebar {
-                width: 100%;
-            }
-
-            .chat-area {
-                width: 100%;
-            }
-
-            .message {
-                max-width: 90%;
-            }
-
-            .top-nav {
-                padding: 0 10px;
-            }
-
-            .nav-tabs {
-                max-width: 200px;
-            }
-
-            .nav-tab {
-                padding: 8px;
-                min-height: 36px;
-            }
-
-            .user-avatar-mini {
-                width: 32px;
-                height: 32px;
-                font-size: 13px;
-            }
-
-            .back-button {
-                width: 36px;
-                height: 36px;
-                margin-right: 8px;
-            }
-
-            .chat-actions-mini button {
-                width: 32px;
-                height: 32px;
-                font-size: 14px;
-            }
-
-            .attachment-menu {
-                min-width: 160px;
-                left: -10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            :root {
-                --sidebar-width: 100%;
-                --top-nav-height: 50px;
-            }
-
-            .logo h1 {
-                font-size: 24px;
-            }
-
-            .logo p {
-                font-size: 12px;
-            }
-
-            .nav-tab span {
-                display: none;
-            }
-
-            .nav-tab {
-                justify-content: center;
-                padding: 5px;
-                min-width: 40px;
-            }
-
-            .nav-tab i {
-                margin: 0;
-                font-size: 16px;
-            }
-
-            .chat-title {
-                font-size: 16px;
-                padding: 0 5px;
-            }
-
-            .message {
-                max-width: 95%;
-            }
-
-            .voice-message {
-                padding: 6px 10px;
-                gap: 6px;
-            }
-
-            .voice-play-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 12px;
-            }
-
-            .voice-duration {
-                font-size: 12px;
-                min-width: 35px;
-            }
-
-            .chat-input-area {
-                padding: 12px;
-                gap: 6px;
-            }
-
-            .chat-input input {
-                padding: 10px 14px;
-                font-size: 16px;
-            }
-
-            .send-button {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
-            }
-
-            .add-contact-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 18px;
-                bottom: 15px;
-                right: 15px;
-            }
-
-            .notification {
-                max-width: 250px;
-                padding: 8px 12px;
-            }
-
-            .form-group input {
-                font-size: 16px;
-                padding: 14px 16px;
-            }
-
-            .btn {
-                font-size: 16px;
-                padding: 16px;
-            }
-        }
-
-        @media (max-width: 320px) {
-            :root {
-                --sidebar-width: 100%;
-                --top-nav-height: 48px;
-            }
-
-            .app-panel {
-                border-radius: 10px;
-            }
-
-            .logo h1 {
-                font-size: 20px;
-            }
-
-            .form-group input {
-                font-size: 16px;
-                padding: 12px 14px;
-            }
-
-            .btn {
-                font-size: 16px;
-                padding: 14px;
-            }
-
-            .chat-input-area {
-                padding: 10px;
-            }
-
-            .chat-input input {
-                font-size: 16px;
-                padding: 10px 12px;
-            }
-        }
-
-        @media (max-height: 600px) {
-            .auth-panel {
-                padding: 20px;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-
-            .app-panel {
-                max-height: 95vh;
-            }
-
-            .user-info {
-                padding: 10px;
-            }
-
-            .panel-content {
-                padding: 10px;
-            }
-
-            .list-item {
-                padding: 8px;
-                margin-bottom: 6px;
-            }
-
-            .chat-messages {
-                padding: 10px;
-            }
-
-            .message {
-                margin-bottom: 8px;
-            }
-
-            .chat-input-area {
-                padding: 10px;
-            }
-        }
-
-        /* Убедимся, что меню вложений не выходит за границы экрана */
-        .attachment-btn {
-            position: relative;
-        }
-
-        @media (max-width: 768px) {
-            .attachment-menu {
-                left: 0;
-                right: auto;
-                min-width: 180px;
-                max-width: calc(100vw - 60px);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .attachment-menu {
-                min-width: 160px;
-                transform-origin: bottom left;
-            }
-            
-            .attachment-option {
-                padding: 8px;
-                font-size: 13px;
-            }
-        }
-
         /* Стили для аудиозвонков */
         .call-overlay {
             position: fixed;
@@ -1796,13 +1549,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: block;
         }
 
-        /* Поддержка iOS Safari */
+        /* Поддержка iOS Safari и Android */
         @supports (-webkit-touch-callout: none) {
             body, html {
                 height: -webkit-fill-available;
+                max-height: -webkit-fill-available;
             }
             
             .app-panel {
+                max-height: -webkit-fill-available;
+            }
+            
+            .auth-panel {
                 max-height: -webkit-fill-available;
             }
             
@@ -1810,6 +1568,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             a, button, input[type="button"], input[type="submit"] {
                 cursor: pointer;
                 -webkit-tap-highlight-color: transparent;
+            }
+            
+            /* Для Android Chrome */
+            .chat-messages,
+            .panel-content,
+            .auth-panel {
+                -webkit-overflow-scrolling: touch;
             }
         }
 
@@ -1848,6 +1613,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         @media (max-width: 768px) {
             body {
                 padding: 0;
+                max-height: 100vh;
+                overflow: hidden;
             }
 
             .app-panel {
@@ -1863,6 +1630,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 margin: 10px;
                 width: calc(100% - 20px);
                 max-width: none;
+                max-height: calc(100vh - 20px);
             }
         }
 
@@ -1870,10 +1638,74 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             body {
                 padding: 0;
                 background: white;
+                max-height: 100vh;
             }
             
             .app-panel {
                 box-shadow: none;
+                max-height: 100vh;
+            }
+        }
+
+        /* Исправление для Android - предотвращение выхода за границы */
+        @media (max-height: 700px) {
+            .auth-panel {
+                padding: 20px 15px;
+                overflow-y: auto;
+                max-height: 95vh;
+            }
+            
+            .logo {
+                margin-bottom: 20px;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group input,
+            .btn {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+
+        /* Для очень маленьких экранов Android */
+        @media (max-height: 500px) {
+            .auth-panel {
+                padding: 15px 10px;
+            }
+            
+            .logo h1 {
+                font-size: 20px;
+            }
+            
+            .logo p {
+                font-size: 12px;
+            }
+            
+            .form-group {
+                margin-bottom: 10px;
+            }
+            
+            .form-group label {
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+            
+            .form-group input,
+            .btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .toggle-auth {
+                margin-top: 10px;
+                font-size: 12px;
             }
         }
     </style>
@@ -1897,6 +1729,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 <label for="loginPassword">Пароль</label>
                 <input type="password" id="loginPassword" placeholder="••••••••">
                 <div class="error-message" id="loginPasswordError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="rememberMe" style="margin-right: 8px; width: 16px; height: 16px;">
+                    <span style="font-size: 14px;">Запомнить меня</span>
+                </label>
             </div>
             
             <button class="btn" onclick="login()">Войти</button>
@@ -2184,9 +2023,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
 
     <script>
-        // JavaScript код остается таким же, как в предыдущем варианте
-        // Все функции и логика остаются без изменений
-        
         let currentUser = null;
         let token = null;
         let currentChatId = null;
@@ -2229,6 +2065,143 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         
         console.log('Base URL:', baseUrl);
         console.log('WebSocket URL:', wsUrl);
+
+        // Функция сохранения токена
+        function saveToken(token) {
+            try {
+                localStorage.setItem('beresta_token', token);
+            } catch (e) {
+                console.warn('Не удалось сохранить токен в localStorage:', e);
+            }
+        }
+
+        // Функция загрузки сохраненного токена
+        function loadToken() {
+            try {
+                return localStorage.getItem('beresta_token');
+            } catch (e) {
+                console.warn('Не удалось загрузить токен из localStorage:', e);
+                return null;
+            }
+        }
+
+        // Функция сохранения флага "запомнить меня"
+        function saveRememberMe(value) {
+            try {
+                localStorage.setItem('beresta_remember_me', value ? 'true' : 'false');
+            } catch (e) {
+                console.warn('Не удалось сохранить настройку:', e);
+            }
+        }
+
+        // Функция загрузки флага "запомнить меня"
+        function loadRememberMe() {
+            try {
+                return localStorage.getItem('beresta_remember_me') === 'true';
+            } catch (e) {
+                console.warn('Не удалось загрузить настройку:', e);
+                return false;
+            }
+        }
+
+        // Функция сохранения email
+        function saveEmail(email) {
+            try {
+                localStorage.setItem('beresta_email', email);
+            } catch (e) {
+                console.warn('Не удалось сохранить email:', e);
+            }
+        }
+
+        // Функция загрузки email
+        function loadEmail() {
+            try {
+                return localStorage.getItem('beresta_email');
+            } catch (e) {
+                console.warn('Не удалось загрузить email:', e);
+                return null;
+            }
+        }
+
+        // Функция очистки сохраненных данных
+        function clearSavedData() {
+            try {
+                localStorage.removeItem('beresta_token');
+                localStorage.removeItem('beresta_email');
+                localStorage.removeItem('beresta_remember_me');
+            } catch (e) {
+                console.warn('Не удалось очистить сохраненные данные:', e);
+            }
+        }
+
+        // Автоматический вход при загрузке страницы
+        async function autoLogin() {
+            const savedToken = loadToken();
+            const savedEmail = loadEmail();
+            const rememberMe = loadRememberMe();
+            
+            if (savedToken && savedEmail && rememberMe) {
+                console.log('Попытка автоматического входа...');
+                
+                try {
+                    // Проверяем токен
+                    const response = await fetch(baseUrl + '/api/validate-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + savedToken
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.valid) {
+                            token = savedToken;
+                            currentUser = data.user;
+                            
+                            // Обновляем информацию о пользователе
+                            document.getElementById('userName').textContent = currentUser.username;
+                            document.getElementById('userEmail').textContent = currentUser.email;
+                            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
+                            document.getElementById('userAvatarMini').textContent = currentUser.username.charAt(0);
+                            
+                            // Переключаемся на основной интерфейс
+                            document.getElementById('authPanel').style.display = 'none';
+                            document.getElementById('appContainer').style.display = 'flex';
+                            document.getElementById('appPanel').classList.add('active');
+                            document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
+                            
+                            // Показываем главную страницу
+                            showMainPage();
+                            
+                            // Загружаем данные и подключаем WebSocket
+                            loadChats();
+                            loadContacts();
+                            connectWebSocket();
+                            
+                            // Запрашиваем разрешение на микрофон
+                            await requestMicrophonePermission();
+                            
+                            console.log('Автоматический вход выполнен успешно');
+                            return true;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Ошибка автоматического входа:', error);
+                }
+            }
+            
+            // Если автоматический вход не удался, показываем форму входа
+            if (savedEmail) {
+                document.getElementById('loginEmail').value = savedEmail;
+            }
+            if (rememberMe) {
+                document.getElementById('rememberMe').checked = true;
+            }
+            
+            return false;
+        }
 
         // WebSocket соединение
         function connectWebSocket() {
@@ -2355,6 +2328,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         async function login() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
             
             clearErrors();
             
@@ -2383,6 +2357,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     token = data.token;
                     currentUser = data.user;
                     
+                    // Сохраняем данные если выбрано "запомнить меня"
+                    if (rememberMe) {
+                        saveToken(token);
+                        saveEmail(email);
+                        saveRememberMe(true);
+                    } else {
+                        // Очищаем сохраненные данные
+                        clearSavedData();
+                    }
+                    
                     // Обновляем информацию о пользователе
                     document.getElementById('userName').textContent = currentUser.username;
                     document.getElementById('userEmail').textContent = currentUser.email;
@@ -2393,7 +2377,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     document.getElementById('authPanel').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'block';
+                    document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
                     
                     // Показываем главную страницу
                     showMainPage();
@@ -2471,6 +2455,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     token = data.token;
                     currentUser = data.user;
                     
+                    // Сохраняем данные для автоматического входа
+                    saveToken(token);
+                    saveEmail(email);
+                    saveRememberMe(true);
+                    
                     // Обновляем информацию о пользователе
                     document.getElementById('userName').textContent = currentUser.username;
                     document.getElementById('userEmail').textContent = currentUser.email;
@@ -2481,7 +2470,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     document.getElementById('authPanel').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'block';
+                    document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
                     
                     // Показываем главную страницу
                     showMainPage();
@@ -2502,6 +2491,37 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
 
+        // Функция выхода
+        function logout() {
+            // Очищаем сохраненные данные
+            clearSavedData();
+            
+            // Закрываем WebSocket соединение
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            // Очищаем переменные
+            currentUser = null;
+            token = null;
+            currentChatId = null;
+            chats = [];
+            contacts = [];
+            
+            // Возвращаем к авторизации
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('authPanel').style.display = 'block';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            
+            // Сбрасываем поля ввода
+            document.getElementById('loginPassword').value = '';
+            clearErrors();
+            
+            showNotification('Вы вышли из системы', 'info');
+        }
+
         // Функции навигации
         function showMainPage() {
             // Показываем боковую панель и главную страницу
@@ -2516,6 +2536,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             // Обновляем списки
             loadChats();
             loadContacts();
+            
+            // Кнопка добавления скрыта по умолчанию
+            document.getElementById('addContactBtn').style.display = 'none';
         }
 
         function goBackToMain() {
@@ -2537,7 +2560,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             event.currentTarget.classList.add('active');
             document.getElementById(tabName + 'Panel').classList.add('active');
             
-            // Показываем/скрываем кнопку добавления
+            // Показываем/скрываем кнопку добавления только на вкладке контактов
             document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
         }
 
@@ -2875,6 +2898,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             // Обновляем верхнюю навигацию
             document.getElementById('mainNav').style.display = 'none';
             document.getElementById('chatNav').style.display = 'flex';
+            
+            // Скрываем кнопку добавления при переходе в чат
+            document.getElementById('addContactBtn').style.display = 'none';
             
             // Загружаем сообщения
             await loadMessages(chatId);
@@ -4233,11 +4259,26 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             return minutes + ':' + secs.toString().padStart(2, '0');
         }
 
-        // Инициализация тестового входа и голосовых сообщений
-        window.onload = function() {
+        // Инициализация при загрузке
+        window.onload = async function() {
             // Автоматически заполняем тестовые данные
-            document.getElementById('loginEmail').value = 'test@example.com';
-            document.getElementById('loginPassword').value = 'password123';
+            const savedEmail = loadEmail();
+            if (!savedEmail) {
+                document.getElementById('loginEmail').value = 'test@example.com';
+                document.getElementById('loginPassword').value = 'password123';
+            }
+            
+            // Загружаем настройку "запомнить меня"
+            const rememberMe = loadRememberMe();
+            document.getElementById('rememberMe').checked = rememberMe;
+            
+            // Пробуем выполнить автоматический вход
+            const autoLoggedIn = await autoLogin();
+            
+            if (!autoLoggedIn) {
+                // Если автоматический вход не удался, показываем форму входа
+                document.getElementById('authPanel').style.display = 'block';
+            }
             
             // Добавляем CSS для анимации волн
             const style = document.createElement('style');
@@ -4271,11 +4312,40 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 }
             });
 
+            // Определяем мобильное устройство
             if (/Mobi|Android/i.test(navigator.userAgent)) {
                 document.body.classList.add('mobile-device');
-                // Увеличиваем размеры некоторых элементов для лучшей читаемости
-                const style = document.createElement('style');
-                style.textContent = \`
+                console.log('Мобильное устройство обнаружено (Android)');
+                
+                // Устанавливаем корректную высоту для мобильных устройств
+                function setMobileHeight() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', vh + 'px');
+                }
+                
+                setMobileHeight();
+                window.addEventListener('resize', setMobileHeight);
+                window.addEventListener('orientationchange', setMobileHeight);
+                
+                // Исправление для Android Chrome - предотвращение выхода за границы
+                const androidStyle = document.createElement('style');
+                androidStyle.textContent = \`
+                    .mobile-device .auth-panel {
+                        max-height: calc(var(--vh, 1vh) * 95);
+                        overflow-y: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
+                    
+                    .mobile-device .app-panel {
+                        max-height: calc(var(--vh, 1vh) * 100);
+                    }
+                    
+                    .mobile-device .chat-messages,
+                    .mobile-device .panel-content {
+                        -webkit-overflow-scrolling: touch;
+                    }
+                    
+                    /* Увеличиваем размеры некоторых элементов для лучшей читаемости на Android */
                     .mobile-device .form-group input,
                     .mobile-device .btn {
                         font-size: 16px !important;
@@ -4293,8 +4363,39 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     .mobile-device .contact-info h4 {
                         font-size: 15px !important;
                     }
+                    
+                    /* Уменьшаем паддинги для очень маленьких экранов */
+                    @media (max-height: 600px) {
+                        .mobile-device .auth-panel {
+                            padding: 15px;
+                        }
+                        
+                        .mobile-device .form-group {
+                            margin-bottom: 12px;
+                        }
+                        
+                        .mobile-device .form-group input,
+                        .mobile-device .btn {
+                            padding: 10px 12px;
+                        }
+                    }
+                    
+                    /* Исправление для клавиатуры Android */
+                    .mobile-device .chat-input-area {
+                        padding-bottom: calc(15px + env(safe-area-inset-bottom));
+                    }
                 \`;
-                document.head.appendChild(style);
+                document.head.appendChild(androidStyle);
+            }
+            
+            // Добавляем кнопку выхода в меню пользователя
+            const userInfo = document.querySelector('.user-info');
+            if (userInfo) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Выйти';
+                logoutBtn.style.cssText = 'background: var(--error-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: auto;';
+                logoutBtn.onclick = logout;
+                userInfo.appendChild(logoutBtn);
             }
         };
     </script>
@@ -4319,6 +4420,8 @@ const server = http.createServer((req, res) => {
         parseJSON(req, res, () => handleRegister(req, res));
     } else if (req.url === '/api/login' && req.method === 'POST') {
         parseJSON(req, res, () => handleLogin(req, res));
+    } else if (req.url === '/api/validate-token' && req.method === 'POST') {
+        parseJSON(req, res, () => handleValidateToken(req, res));
     } else if (req.url === '/api/contacts' && req.method === 'GET') {
         parseJSON(req, res, () => {
             authenticate(req, res, () => handleGetContacts(req, res));
@@ -4849,6 +4952,41 @@ async function handleLogin(req, res) {
             }));
         });
     });
+}
+
+// Валидация токена
+async function handleValidateToken(req, res) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ valid: false, error: 'No token provided' }));
+        return;
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        db.get('SELECT id, email, username FROM users WHERE id = ?', [decoded.userId], (err, user) => {
+            if (err || !user) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ valid: false, error: 'User not found' }));
+                return;
+            }
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                valid: true,
+                user: { id: user.id, email: user.email, username: user.username }
+            }));
+        });
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ valid: false, error: 'Invalid token' }));
+    }
 }
 
 async function handleGetContacts(req, res) {
@@ -5576,6 +5714,8 @@ server.listen(PORT, () => {
     console.log('• Сразу виден список чатов');
     console.log('• Переключатель между чатами и контактами');
     console.log('• Кнопка "Назад" в чате для возврата к списку');
+    console.log('• Кнопка добавления контакта только на вкладке контактов');
+    console.log('• Сохранение входа (опция "запомнить меня")');
     
     console.log('\n📞 Аудиозвонки:');
     console.log('• Двусторонняя аудиосвязь через WebRTC');
@@ -5615,5 +5755,3 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
-
-
