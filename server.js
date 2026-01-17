@@ -230,6 +230,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .app-panel.active {
             display: flex;
+            flex-direction: column;
         }
 
         .logo {
@@ -321,25 +322,63 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         /* Основной интерфейс */
-        .sidebar {
-            width: 300px;
-            background: #f8fafc;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-info {
+        .app-header {
             padding: 20px;
             border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: #4f46e5;
+            font-size: 20px;
+            cursor: pointer;
+            margin-right: 15px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #f3f4f6;
+        }
+
+        .back-button.show {
+            display: flex;
+        }
+
+        .header-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4f46e5;
+        }
+
+        .user-info-header {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             border-radius: 50%;
             display: flex;
@@ -347,53 +386,70 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             color: white;
             font-weight: bold;
-        }
-
-        .user-details h3 {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .user-details p {
-            font-size: 12px;
-            color: #666;
+            font-size: 14px;
         }
 
         .nav-tabs {
             display: flex;
-            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 4px;
+            margin: 0 20px 20px 20px;
         }
 
         .nav-tab {
             flex: 1;
-            padding: 15px;
+            padding: 12px 20px;
             text-align: center;
             cursor: pointer;
             font-weight: 500;
             color: #666;
             transition: all 0.3s;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .nav-tab.active {
             color: #4f46e5;
-            border-bottom: 2px solid #4f46e5;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px 20px;
         }
 
         .content-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
             display: none;
+            flex-direction: column;
+            height: 100%;
         }
 
-        .panel-content.active {
-            display: block;
+        .content-panel.active {
+            display: flex;
+        }
+
+        /* Список чатов */
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #4f46e5;
         }
 
         .list-item {
@@ -403,6 +459,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             cursor: pointer;
             transition: background 0.3s;
             border: 1px solid #e5e7eb;
+            background: white;
         }
 
         .list-item:hover {
@@ -444,22 +501,96 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: #4f46e5;
         }
 
+        /* Список контактов */
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: 1px solid #e5e7eb;
+            background: white;
+            margin-bottom: 10px;
+        }
+
+        .contact-item:hover {
+            background: #f3f4f6;
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .contact-info h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: #1f2937;
+        }
+
+        .contact-info p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Интерфейс чата */
+        .chat-area {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-area.active {
+            display: flex;
+        }
+
         .chat-header {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 15px;
+            background: white;
         }
 
         .chat-title {
             font-size: 18px;
             font-weight: 600;
+            flex: 1;
         }
 
         .chat-actions {
             display: flex;
             gap: 10px;
+        }
+
+        .chat-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .chat-actions button:hover {
+            background-color: #f3f4f6;
         }
 
         .chat-messages {
@@ -589,8 +720,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             gap: 10px;
             align-items: center;
             background: white;
-            position: sticky;
-            bottom: 0;
         }
 
         .chat-input {
@@ -704,6 +833,97 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             100% { transform: scale(1); opacity: 1; }
         }
 
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            max-width: fit-content;
+            margin-bottom: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .typing-indicator.show {
+            display: flex;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #e5e7eb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        /* Модальные окна и кнопка добавления */
+        .add-contact-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+            border: none;
+            z-index: 100;
+            display: none;
+        }
+
+        .add-contact-btn.show {
+            display: flex;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -749,92 +969,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: #666;
         }
 
-        .search-box {
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #9ca3af;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .contact-item:hover {
-            background: #f3f4f6;
-        }
-
-        .contact-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #8b5cf6, #6366f1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .contact-info h4 {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .contact-info p {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .add-contact-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
-            border: none;
-        }
-        
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        
+        /* Уведомление */
         .notification {
             position: fixed;
             top: 20px;
@@ -847,103 +982,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: none;
             z-index: 1001;
         }
-        
+
         .notification.show {
             display: block;
             animation: slideIn 0.3s ease;
         }
-        
+
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
-        }
-
-        .typing-indicator {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 20px;
-            max-width: fit-content;
-            margin-bottom: 10px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .typing-indicator.show {
-            display: flex;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background: #9ca3af;
-            border-radius: 50%;
-            animation: typingAnimation 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingAnimation {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
-        }
-
-        .emoji-picker {
-            position: absolute;
-            bottom: 70px;
-            right: 20px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 100;
-        }
-
-        .emoji-picker.show {
-            display: block;
-        }
-
-        .emoji-category {
-            margin-bottom: 10px;
-        }
-
-        .emoji-category h4 {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 5px;
-        }
-
-        .emoji {
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .emoji:hover {
-            background: #f3f4f6;
         }
 
         /* Стили для файлов */
@@ -1011,85 +1058,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: rgba(79, 70, 229, 0.2);
         }
 
-        .upload-progress {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 300px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            padding: 15px;
-            z-index: 1002;
-            display: none;
-        }
-
-        .upload-progress.show {
-            display: block;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .upload-list {
-            margin-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .upload-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            border-radius: 6px;
-            margin-bottom: 5px;
-        }
-
-        .upload-item.success {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-        }
-
-        .upload-item.error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-        }
-
+        /* Меню вложений */
         .attachment-btn {
             position: relative;
-            display: inline-block;
         }
 
         .attachment-menu {
             position: absolute;
             bottom: 100%;
-            right: 0;
+            left: 0;
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 10px;
@@ -1098,6 +1075,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             min-width: 200px;
             display: none;
             z-index: 100;
+            margin-bottom: 10px;
         }
 
         .attachment-menu.show {
@@ -1124,14 +1102,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: #4f46e5;
         }
 
-        .image-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-
-        /* Стили для аудиозвонков */
+        /* Аудиозвонки */
         .call-overlay {
             position: fixed;
             top: 0;
@@ -1270,35 +1241,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        .call-ringing-animation {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .ringing-circle {
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
-            border-radius: 50%;
-            animation: ring 1.5s infinite;
-        }
-
-        .ringing-circle:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .ringing-circle:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes ring {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-        }
-
         .incoming-call-notification {
             position: fixed;
             top: 20px;
@@ -1382,24 +1324,105 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: white;
         }
 
-        .call-status {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
+        .call-ringing-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .ringing-circle {
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            border-radius: 50%;
+            animation: ring 1.5s infinite;
+        }
+
+        .ringing-circle:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .ringing-circle:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes ring {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+        }
+
+        .upload-progress {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            background: white;
             border-radius: 10px;
-            margin: 20px 0;
-            display: inline-block;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 15px;
+            z-index: 1002;
+            display: none;
         }
 
-        .volume-slider {
-            width: 200px;
-            margin: 20px auto;
+        .upload-progress.show {
+            display: block;
+            animation: slideUp 0.3s ease;
         }
 
-        .volume-slider input {
-            width: 100%;
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
-        
-        /* Стили для отладки */
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .upload-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+
+        .upload-item.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .upload-item.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
         .debug-panel {
             position: fixed;
             top: 10px;
@@ -1413,7 +1436,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             z-index: 9999;
             display: none;
         }
-        
+
         .debug-panel.show {
             display: block;
         }
@@ -1475,20 +1498,25 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
 
     <!-- Основной интерфейс (скрыт до входа) -->
-    <div class="container" style="display: none;" id="appContainer">
-        <div class="app-panel" id="appPanel">
-            <!-- Боковая панель -->
-            <div class="sidebar">
-                <!-- Информация о пользователе -->
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar">Т</div>
-                    <div class="user-details">
-                        <h3 id="userName">Тестовый Пользователь</h3>
-                        <p id="userEmail">test@example.com</p>
-                    </div>
+    <div class="app-panel" id="appPanel">
+        <!-- Шапка приложения -->
+        <div class="app-header">
+            <button class="back-button" id="backButton" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-content">
+                <div class="app-title" id="appTitle">Береста</div>
+                <div class="user-info-header">
+                    <div class="user-avatar-small" id="userAvatarSmall">Т</div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Вкладки -->
+        <!-- Основное содержимое -->
+        <div class="content-area">
+            <!-- Главная страница (список чатов/контактов) -->
+            <div class="content-panel active" id="mainPanel">
+                <!-- Переключатель вкладок -->
                 <div class="nav-tabs">
                     <div class="nav-tab active" onclick="switchTab('chats')">
                         <i class="fas fa-comments"></i> Чаты
@@ -1498,110 +1526,99 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <!-- Содержимое вкладок -->
-                <div class="content-panel">
-                    <!-- Список чатов -->
-                    <div class="panel-content active" id="chatsPanel">
-                        <div class="search-box">
-                            <input type="text" placeholder="Поиск чатов..." oninput="searchChats(this.value)">
-                        </div>
-                        <div id="chatsList">
-                            <div class="loading">Загрузка чатов...</div>
-                        </div>
+                <!-- Список чатов -->
+                <div class="content-panel active" id="chatsPanel">
+                    <div class="search-box">
+                        <input type="text" placeholder="Поиск чатов..." oninput="searchChats(this.value)">
                     </div>
+                    <div id="chatsList">
+                        <div class="loading">Загрузка чатов...</div>
+                    </div>
+                </div>
 
-                    <!-- Список контактов -->
-                    <div class="panel-content" id="contactsPanel">
-                        <div class="search-box">
-                            <input type="text" placeholder="Поиск контактов..." oninput="searchContacts(this.value)">
-                        </div>
-                        <div id="contactsList">
-                            <div class="loading">Загрузка контактов...</div>
-                        </div>
+                <!-- Список контактов -->
+                <div class="content-panel" id="contactsPanel">
+                    <div class="search-box">
+                        <input type="text" placeholder="Поиск контактов..." oninput="searchContacts(this.value)">
+                    </div>
+                    <div id="contactsList">
+                        <div class="loading">Загрузка контактов...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Основная область чата -->
-            <div class="chat-area">
-                <!-- Заглушка при отсутствии выбранного чата -->
-                <div id="chatPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
-                    <div style="text-align: center;">
-                        <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px;"></i>
-                        <h3 style="margin-bottom: 10px;">Выберите чат</h3>
-                        <p>Начните общение с контактом</p>
-                    </div>
-                </div>
-
-                <!-- Интерфейс чата -->
-                <div id="chatInterface" style="display: none; height: 100%; flex-direction: column;">
-                    <div class="chat-header">
-                        <div class="chat-title" id="chatTitle">Название чата</div>
-                        <div class="chat-actions">
-                            <button onclick="startAudioCall()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px;" title="Аудиозвонок">
-                                <i class="fas fa-phone"></i>
-                            </button>
-                            <button onclick="showChatInfo()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px;">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="empty-state">Сообщений пока нет</div>
-                    </div>
-                    
-                    <!-- Индикатор печати -->
-                    <div class="typing-indicator" id="typingIndicator">
-                        <div class="typing-dots">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                        </div>
-                        <span id="typingText">Печатает...</span>
-                    </div>
-                    
-                    <!-- Область ввода сообщения -->
-                    <div class="chat-input-area">
-                        <div class="attachment-btn">
-                            <button onclick="toggleAttachmentMenu()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px; margin-right: 10px;">
-                                <i class="fas fa-paperclip"></i>
-                            </button>
-                            <div class="attachment-menu" id="attachmentMenu">
-                                <div class="attachment-option" onclick="attachFile()">
-                                    <i class="fas fa-file"></i>
-                                    <span>Прикрепить файл</span>
-                                </div>
-                                <div class="attachment-option" onclick="attachImage()">
-                                    <i class="fas fa-image"></i>
-                                    <span>Прикрепить изображение</span>
-                                </div>
-                                <div class="attachment-option" onclick="attachDocument()">
-                                    <i class="fas fa-file-pdf"></i>
-                                    <span>Документ PDF</span>
-                                </div>
-                                <div class="attachment-option" onclick="attachVideo()">
-                                    <i class="fas fa-video"></i>
-                                    <span>Видео файл</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="chat-input">
-                            <input type="text" id="messageInput" placeholder="Введите сообщение..." 
-                                   oninput="handleTyping()" onkeypress="handleKeyPress(event)">
-                            <div class="input-hint">
-                                <i class="fas fa-microphone"></i> Удерживайте для записи
-                            </div>
-                        </div>
-                        <button class="send-button" id="sendButton" 
-                                onmousedown="startVoiceRecording(event)" 
-                                ontouchstart="startVoiceRecording(event)"
-                                onmouseup="stopVoiceRecording(event)"
-                                ontouchend="stopVoiceRecording(event)">
-                            <i class="fas fa-paper-plane"></i>
+            <!-- Интерфейс чата -->
+            <div class="chat-area" id="chatArea">
+                <div class="chat-header">
+                    <div class="chat-title" id="chatTitle">Название чата</div>
+                    <div class="chat-actions">
+                        <button onclick="startAudioCall()" title="Аудиозвонок">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button onclick="showChatInfo()" title="Информация о чате">
+                            <i class="fas fa-info-circle"></i>
                         </button>
                     </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <h3>Сообщений пока нет</h3>
+                        <p>Начните общение первым</p>
+                    </div>
+                </div>
+                
+                <!-- Индикатор печати -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <span id="typingText">Печатает...</span>
+                </div>
+                
+                <!-- Область ввода сообщения -->
+                <div class="chat-input-area">
+                    <div class="attachment-btn">
+                        <button onclick="toggleAttachmentMenu()" style="background: none; border: none; cursor: pointer; color: #666; font-size: 20px; margin-right: 10px;">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <div class="attachment-menu" id="attachmentMenu">
+                            <div class="attachment-option" onclick="attachFile()">
+                                <i class="fas fa-file"></i>
+                                <span>Прикрепить файл</span>
+                            </div>
+                            <div class="attachment-option" onclick="attachImage()">
+                                <i class="fas fa-image"></i>
+                                <span>Прикрепить изображение</span>
+                            </div>
+                            <div class="attachment-option" onclick="attachDocument()">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Документ PDF</span>
+                            </div>
+                            <div class="attachment-option" onclick="attachVideo()">
+                                <i class="fas fa-video"></i>
+                                <span>Видео файл</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input">
+                        <input type="text" id="messageInput" placeholder="Введите сообщение..." 
+                               oninput="handleTyping()" onkeypress="handleKeyPress(event)">
+                        <div class="input-hint">
+                            <i class="fas fa-microphone"></i> Удерживайте для записи
+                        </div>
+                    </div>
+                    <button class="send-button" id="sendButton" 
+                            onmousedown="startVoiceRecording(event)" 
+                            ontouchstart="startVoiceRecording(event)"
+                            onmouseup="stopVoiceRecording(event)"
+                            ontouchend="stopVoiceRecording(event)">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1701,7 +1718,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="notification" id="notification"></div>
 
     <!-- Кнопка добавления контакта -->
-    <button class="add-contact-btn" onclick="showAddContactModal()" id="addContactBtn" style="display: none;">
+    <button class="add-contact-btn" onclick="showAddContactModal()" id="addContactBtn">
         <i class="fas fa-user-plus"></i>
     </button>
 
@@ -1713,6 +1730,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Глобальные переменные
         let currentUser = null;
         let token = null;
         let currentChatId = null;
@@ -1723,7 +1741,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let audioChunks = [];
         let recordingTimer = null;
         let recordingStartTime = null;
-        let audioContext = null;
         let audioElements = new Map();
         let isRecording = false;
         let typingTimeout = null;
@@ -1747,6 +1764,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let ringingAudio = null;
         let callTimeout = null;
         let debugMode = false;
+
+        // Переменные для состояния интерфейса
+        let currentView = 'main'; // 'main' или 'chat'
+        let currentTab = 'chats'; // 'chats' или 'contacts'
 
         // Динамическое определение URL для Render
         const baseUrl = window.location.origin;
@@ -1910,15 +1931,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     currentUser = data.user;
                     
                     // Обновляем информацию о пользователе
-                    document.getElementById('userName').textContent = currentUser.username;
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
+                    document.getElementById('userAvatarSmall').textContent = currentUser.username.charAt(0);
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
-                    document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'block';
                     
                     // Загружаем данные и подключаем WebSocket
                     loadChats();
@@ -1994,15 +2011,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     currentUser = data.user;
                     
                     // Обновляем информацию о пользователе
-                    document.getElementById('userName').textContent = currentUser.username;
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
+                    document.getElementById('userAvatarSmall').textContent = currentUser.username.charAt(0);
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
-                    document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'block';
                     
                     // Загружаем данные и подключаем WebSocket
                     loadChats();
@@ -2022,20 +2035,49 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Функции управления интерфейсом
         function switchTab(tabName) {
+            currentTab = tabName;
+            
             // Обновляем активные вкладки
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            document.querySelectorAll('.panel-content').forEach(content => {
+            document.querySelectorAll('.content-panel').forEach(content => {
                 content.classList.remove('active');
             });
             
-            event.currentTarget.classList.add('active');
+            // Активируем выбранную вкладку
+            const activeTab = document.querySelector(`.nav-tab[onclick="switchTab('${tabName}')"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
             document.getElementById(tabName + 'Panel').classList.add('active');
             
-            // Показываем/скрываем кнопку добавления
+            // Показываем/скрываем кнопку добавления контакта
             document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
+        }
+
+        function goBack() {
+            // Возвращаемся на главную страницу
+            showMainView();
+        }
+
+        function showMainView() {
+            currentView = 'main';
+            document.getElementById('mainPanel').classList.add('active');
+            document.getElementById('chatArea').classList.remove('active');
+            document.getElementById('backButton').classList.remove('show');
+            document.getElementById('appTitle').textContent = 'Береста';
+            document.getElementById('addContactBtn').style.display = currentTab === 'contacts' ? 'block' : 'none';
+        }
+
+        function showChatView() {
+            currentView = 'chat';
+            document.getElementById('mainPanel').classList.remove('active');
+            document.getElementById('chatArea').classList.add('active');
+            document.getElementById('backButton').classList.add('show');
+            document.getElementById('addContactBtn').style.display = 'none';
         }
 
         function toggleAttachmentMenu() {
@@ -2364,9 +2406,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         async function openChat(chatId) {
             currentChatId = chatId;
             
-            // Показываем интерфейс чата
-            document.getElementById('chatPlaceholder').style.display = 'none';
-            document.getElementById('chatInterface').style.display = 'flex';
+            // Переключаемся на вид чата
+            showChatView();
             
             // Загружаем сообщения
             await loadMessages(chatId);
@@ -2375,6 +2416,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const chat = chats.find(c => c.chat_id === chatId);
             if (chat) {
                 document.getElementById('chatTitle').textContent = chat.chat_name || chat.other_user_name || 'Личный чат';
+                document.getElementById('appTitle').textContent = chat.chat_name || chat.other_user_name || 'Чат';
             }
             
             // Фокус на поле ввода
@@ -2407,7 +2449,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const container = document.getElementById('chatMessages');
             
             if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="empty-state">Сообщений пока нет</div>';
+                container.innerHTML = '<div class="empty-state">' +
+                    '<i class="fas fa-comments"></i>' +
+                    '<h3>Сообщений пока нет</h3>' +
+                    '<p>Начните общение первым</p>' +
+                    '</div>';
                 return;
             }
             
@@ -2925,14 +2971,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     // Открываем чат
                     currentChatId = data.chatId;
                     
-                    // Показываем интерфейс чата
-                    document.getElementById('chatPlaceholder').style.display = 'none';
-                    document.getElementById('chatInterface').style.display = 'flex';
+                    // Переключаемся на вид чата
+                    showChatView();
                     
                     // Обновляем заголовок
                     const contact = contacts.find(c => c.id === contactId);
                     if (contact) {
                         document.getElementById('chatTitle').textContent = contact.username;
+                        document.getElementById('appTitle').textContent = contact.username;
                     }
                     
                     // Загружаем сообщения
@@ -3743,7 +3789,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             return minutes + ':' + secs.toString().padStart(2, '0');
         }
 
-        // Инициализация тестового входа и голосовых сообщений
+        // Инициализация
         window.onload = function() {
             // Автоматически заполняем тестовые данные
             document.getElementById('loginEmail').value = 'test@example.com';
@@ -3763,15 +3809,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             // Для мобильных устройств: обработка касаний
             document.addEventListener('touchstart', function(e) {
-                // Обработка для предотвращения масштабирования
                 if (e.touches.length > 1) {
                     e.preventDefault();
                 }
             }, { passive: false });
             
             console.log('Application initialized');
-            console.log('Base URL:', baseUrl);
-            console.log('WebSocket URL:', wsUrl);
             
             // Добавляем обработчик для отладки по Ctrl+D
             document.addEventListener('keydown', function(e) {
@@ -3780,6 +3823,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     toggleDebug();
                 }
             });
+            
+            // Инициализация кнопки добавления контакта
+            document.getElementById('addContactBtn').style.display = 'none';
         };
     </script>
 </body>
