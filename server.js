@@ -358,14 +358,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             height: 100%;
         }
 
-        /* Навигационные вкладки вверху */
+        /* Навигационные вкладки вверху - ИСПРАВЛЕНО ДЛЯ ПК */
         .nav-tabs {
             display: flex;
             flex: 1;
             max-width: none;
-            justify-content: center;
+            justify-content: flex-start;
             margin-right: auto;
-            margin-left: 20px;
+            margin-left: 0;
         }
 
         .nav-tab {
@@ -541,6 +541,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             font-weight: bold;
             font-size: 16px;
             flex-shrink: 0;
+        }
+
+        .user-details {
+            flex: 1;
         }
 
         .user-details h3 {
@@ -1719,6 +1723,29 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             .back-button {
                 display: none;
             }
+            
+            /* Исправление положения вкладок на ПК */
+            .top-nav {
+                display: none;
+            }
+            
+            .sidebar .nav-tabs {
+                display: flex;
+                border-bottom: 1px solid var(--border-color);
+                background: white;
+                padding: 0 15px;
+            }
+            
+            .sidebar .nav-tab {
+                flex: 1;
+                text-align: center;
+                padding: 15px 10px;
+            }
+            
+            .sidebar .nav-tab.active {
+                background: transparent;
+                border-bottom-color: var(--primary-color);
+            }
         }
 
         @media (max-width: 480px) {
@@ -1869,9 +1896,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <!-- Основной интерфейс (скрыт до входа) -->
     <div class="container" style="display: none;" id="appContainer">
         <div class="app-panel" id="appPanel">
-            <!-- Верхняя панель навигации -->
+            <!-- Верхняя панель навигации (только для мобильных) -->
             <div class="top-nav" id="topNav">
-                <!-- Для главной страницы: переключатель чаты/контакты -->
+                <!-- Для мобильной версии: переключатель чаты/контакты -->
                 <div class="top-nav-content" id="mainNav">
                     <div class="nav-tabs">
                         <div class="nav-tab active" onclick="switchTab('chats')">
@@ -1923,6 +1950,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     </button>
                 </div>
 
+                <!-- Вкладки для ПК версии - ПЕРЕМЕЩЕНЫ В БОКОВУЮ ПАНЕЛЬ -->
+                <div class="nav-tabs">
+                    <div class="nav-tab active" onclick="switchTab('chats')">
+                        <i class="fas fa-comments"></i> <span class="tab-text">Чаты</span>
+                    </div>
+                    <div class="nav-tab" onclick="switchTab('contacts')">
+                        <i class="fas fa-users"></i> <span class="tab-text">Контакты</span>
+                    </div>
+                </div>
+
                 <!-- Содержимое вкладок -->
                 <div class="content-panel">
                     <!-- Список чатов -->
@@ -1941,6 +1978,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                             <input type="text" placeholder="Поиск контактов..." oninput="searchContacts(this.value)">
                         </div>
                         <div id="contactsList">
+                            <div class="loading">Загрузка контактов...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Панель контактов для мобильных устройств -->
+                    <div class="panel-content" id="mobileContactsPanel" style="display: none;">
+                        <div class="search-box">
+                            <input type="text" placeholder="Поиск контактов..." oninput="searchContacts(this.value)">
+                        </div>
+                        <div id="mobileContactsList">
                             <div class="loading">Загрузка контактов...</div>
                         </div>
                     </div>
@@ -2824,9 +2871,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('chatAreaDesktop').style.display = 'flex';
                 document.getElementById('chatAreaMobile').style.display = 'none';
                 
-                // Обновляем верхнюю навигацию
-                document.getElementById('mainNav').style.display = 'flex';
-                document.getElementById('chatNavMobile').style.display = 'none';
+                // На ПК верхняя навигация скрыта
+                document.getElementById('topNav').style.display = 'none';
             }
             
             // Обновляем списки
@@ -2853,7 +2899,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 content.classList.remove('active');
             });
             
-            // Находим нажатую вкладку и делаем ее активной
+            // Делаем активной нажатую вкладку
             const activeTab = Array.from(document.querySelectorAll('.nav-tab')).find(tab => 
                 tab.textContent.includes(tabName === 'chats' ? 'Чаты' : 'Контакты') ||
                 tab.textContent.includes(tabName === 'chats' ? 'Comments' : 'Users')
@@ -2863,7 +2909,26 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 activeTab.classList.add('active');
             }
             
-            document.getElementById(tabName + 'Panel').classList.add('active');
+            // Для ПК версии
+            if (!isMobile) {
+                if (tabName === 'chats') {
+                    document.getElementById('chatsPanel').classList.add('active');
+                    document.getElementById('contactsPanel').classList.remove('active');
+                } else if (tabName === 'contacts') {
+                    document.getElementById('chatsPanel').classList.remove('active');
+                    document.getElementById('contactsPanel').classList.add('active');
+                }
+            } 
+            // Для мобильных устройств
+            else {
+                if (tabName === 'chats') {
+                    document.getElementById('chatsPanel').classList.add('active');
+                    document.getElementById('mobileContactsPanel').classList.remove('active');
+                } else if (tabName === 'contacts') {
+                    document.getElementById('chatsPanel').classList.remove('active');
+                    document.getElementById('mobileContactsPanel').classList.add('active');
+                }
+            }
             
             // Показываем/скрываем кнопку добавления только на вкладке контактов
             document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
@@ -3156,7 +3221,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     const data = await response.json();
                     contacts = data.contacts || [];
                     console.log('Загружено контактов:', contacts.length);
+                    
+                    // Отображаем контакты в соответствующем месте
                     displayContacts(contacts);
+                    
+                    // Для мобильных устройств также обновляем мобильную панель
+                    if (isMobile) {
+                        displayMobileContacts(contacts);
+                    }
                 } else {
                     console.error('Ошибка загрузки контактов:', response.status);
                 }
@@ -3167,6 +3239,37 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         function displayContacts(contactList) {
             const container = document.getElementById('contactsList');
+            
+            if (!container) {
+                console.error('Контейнер contactsList не найден!');
+                return;
+            }
+            
+            if (!contactList || contactList.length === 0) {
+                container.innerHTML = '<div class="empty-state">Контактов пока нет</div>';
+                return;
+            }
+            
+            let html = '';
+            for (const contact of contactList) {
+                html += '<div class="contact-item" onclick="startChatWithContact(' + contact.id + ')">';
+                html += '<div class="contact-avatar">' + contact.username.charAt(0).toUpperCase() + '</div>';
+                html += '<div class="contact-info">';
+                html += '<h4>' + contact.username + '</h4>';
+                html += '<p>' + contact.email + '</p>';
+                html += '</div>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function displayMobileContacts(contactList) {
+            const container = document.getElementById('mobileContactsList');
+            
+            if (!container) {
+                console.error('Контейнер mobileContactsList не найден!');
+                return;
+            }
             
             if (!contactList || contactList.length === 0) {
                 container.innerHTML = '<div class="empty-state">Контактов пока нет</div>';
@@ -3192,6 +3295,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 contact.email.toLowerCase().includes(query.toLowerCase())
             );
             displayContacts(filtered);
+            
+            // Обновляем также мобильные контакты
+            if (isMobile) {
+                displayMobileContacts(filtered);
+            }
         }
 
         // Работа с чатами
@@ -3218,9 +3326,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('chatAreaDesktop').style.display = 'flex';
                 document.getElementById('chatAreaMobile').style.display = 'none';
                 
-                // Обновляем верхнюю навигацию
-                document.getElementById('mainNav').style.display = 'flex';
-                document.getElementById('chatNavMobile').style.display = 'none';
+                // На ПК верхняя навигация скрыта
+                document.getElementById('topNav').style.display = 'none';
             }
             
             // Скрываем кнопку добавления при переходе в чат
@@ -3795,8 +3902,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 if (response.ok && data.success) {
                     showNotification('Контакт добавлен!', 'success');
                     closeModal('addContactModal');
-                    loadContacts();
-                    loadChats();
+                    
+                    // Очищаем поле ввода
+                    document.getElementById('contactEmail').value = '';
+                    
+                    // Загружаем контакты заново
+                    await loadContacts();
+                    await loadChats();
+                    
+                    // В мобильной версии переключаемся на вкладку контактов
+                    if (isMobile) {
+                        switchTab('contacts');
+                    }
                 } else {
                     showError('contactEmailError', data.error || 'Ошибка добавления контакта');
                 }
