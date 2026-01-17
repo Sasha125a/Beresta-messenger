@@ -362,12 +362,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .nav-tabs {
             display: flex;
             flex: 1;
-            max-width: 250px;
+            max-width: none;
+            justify-content: center;
+            margin-right: auto;
+            margin-left: 20px;
         }
 
         .nav-tab {
-            flex: 1;
-            padding: 10px;
+            flex: 0 1 auto;
+            padding: 12px 20px;
             text-align: center;
             cursor: pointer;
             font-weight: 500;
@@ -376,15 +379,17 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             border-bottom: 2px solid transparent;
-            font-size: 14px;
+            font-size: 15px;
             min-height: 40px;
+            white-space: nowrap;
         }
 
         .nav-tab.active {
             color: var(--primary-color);
             border-bottom-color: var(--primary-color);
+            background: rgba(79, 70, 229, 0.05);
         }
 
         .nav-tab i {
@@ -396,6 +401,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             margin-left: auto;
             display: flex;
             align-items: center;
+            position: relative;
+            cursor: pointer;
         }
 
         .user-avatar-mini {
@@ -409,6 +416,37 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: white;
             font-weight: bold;
             font-size: 14px;
+        }
+
+        /* Меню пользователя */
+        .user-menu {
+            position: absolute;
+            top: 50px;
+            right: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 10px;
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .user-menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .user-menu-item:hover {
+            background: #f3f4f6;
+        }
+
+        .user-menu-item i {
+            margin-right: 8px;
         }
 
         /* Кнопка "Назад" в чате */
@@ -1602,6 +1640,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             .message-content {
                 font-size: 15px;
             }
+            
+            .tab-text {
+                display: none;
+            }
+            
+            .nav-tab {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
         }
 
         /* Исправления для полного заполнения экрана */
@@ -1640,6 +1687,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             .chat-area-mobile {
                 display: flex;
+            }
+            
+            .tab-text {
+                display: none;
+            }
+            
+            .nav-tab {
+                padding: 12px 15px;
             }
         }
 
@@ -1820,14 +1875,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 <div class="top-nav-content" id="mainNav">
                     <div class="nav-tabs">
                         <div class="nav-tab active" onclick="switchTab('chats')">
-                            <i class="fas fa-comments"></i> <span>Чаты</span>
+                            <i class="fas fa-comments"></i> <span class="tab-text">Чаты</span>
                         </div>
                         <div class="nav-tab" onclick="switchTab('contacts')">
-                            <i class="fas fa-users"></i> <span>Контакты</span>
+                            <i class="fas fa-users"></i> <span class="tab-text">Контакты</span>
                         </div>
                     </div>
-                    <div class="user-info-mini">
+                    <div class="user-info-mini" onclick="toggleUserMenu()">
                         <div class="user-avatar-mini" id="userAvatarMini">Т</div>
+                        <!-- Меню пользователя -->
+                        <div class="user-menu" id="userMenu">
+                            <div class="user-menu-item" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -2212,39 +2273,50 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         // Функция сохранения токена с привязкой к устройству
         function saveToken(token, rememberMe) {
-            if (rememberMe && deviceId) {
-                try {
+            try {
+                if (rememberMe && deviceId) {
                     localStorage.setItem('beresta_token_' + deviceId, token);
                     localStorage.setItem('beresta_remember_me_' + deviceId, 'true');
-                } catch (e) {
-                    console.warn('Не удалось сохранить токен в localStorage:', e);
+                    console.log('Токен сохранен в localStorage для устройства:', deviceId);
+                } else {
+                    // Если не "запомнить меня", сохраняем только на текущую сессию
+                    sessionStorage.setItem('beresta_token', token);
+                    console.log('Токен сохранен в sessionStorage');
                 }
-            } else {
-                // Если не "запомнить меня", сохраняем только на текущую сессию
-                sessionStorage.setItem('beresta_token', token);
+            } catch (e) {
+                console.warn('Не удалось сохранить токен:', e);
             }
         }
 
         // Функция загрузки сохраненного токена для текущего устройства
         function loadToken() {
-            // Сначала проверяем sessionStorage (текущая сессия)
-            let token = sessionStorage.getItem('beresta_token');
-            
-            if (!token && deviceId) {
-                // Если нет в sessionStorage, проверяем localStorage для этого устройства
-                const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
-                if (rememberMe === 'true') {
-                    token = localStorage.getItem('beresta_token_' + deviceId);
+            try {
+                // Сначала проверяем sessionStorage (текущая сессия)
+                let token = sessionStorage.getItem('beresta_token');
+                
+                if (!token && deviceId) {
+                    // Если нет в sessionStorage, проверяем localStorage для этого устройства
+                    const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
+                    if (rememberMe === 'true') {
+                        token = localStorage.getItem('beresta_token_' + deviceId);
+                        console.log('Токен загружен из localStorage для устройства:', deviceId);
+                    }
                 }
+                
+                return token;
+            } catch (e) {
+                console.warn('Не удалось загрузить токен:', e);
+                return null;
             }
-            
-            return token;
         }
 
         // Функция сохранения email
         function saveEmail(email) {
             try {
-                localStorage.setItem('beresta_email_' + deviceId, email);
+                if (deviceId) {
+                    localStorage.setItem('beresta_email_' + deviceId, email);
+                    console.log('Email сохранен для устройства:', deviceId);
+                }
             } catch (e) {
                 console.warn('Не удалось сохранить email:', e);
             }
@@ -2253,7 +2325,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         // Функция загрузки email
         function loadEmail() {
             try {
-                return localStorage.getItem('beresta_email_' + deviceId);
+                if (deviceId) {
+                    return localStorage.getItem('beresta_email_' + deviceId);
+                }
+                return null;
             } catch (e) {
                 console.warn('Не удалось загрузить email:', e);
                 return null;
@@ -2267,8 +2342,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     localStorage.removeItem('beresta_token_' + deviceId);
                     localStorage.removeItem('beresta_remember_me_' + deviceId);
                     localStorage.removeItem('beresta_email_' + deviceId);
+                    console.log('Данные очищены из localStorage для устройства:', deviceId);
                 }
                 sessionStorage.removeItem('beresta_token');
+                console.log('Данные очищены из sessionStorage');
             } catch (e) {
                 console.warn('Не удалось очистить сохраненные данные:', e);
             }
@@ -2280,8 +2357,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const savedToken = loadToken();
             const savedEmail = loadEmail();
             
+            console.log('Попытка автоматического входа:', {
+                deviceId: deviceId,
+                hasToken: !!savedToken,
+                hasEmail: !!savedEmail,
+                token: savedToken ? 'Есть' : 'Нет',
+                email: savedEmail || 'Нет'
+            });
+            
             if (savedToken && savedEmail) {
-                console.log('Попытка автоматического входа для устройства:', deviceId);
+                console.log('Токен найден для устройства:', deviceId);
                 
                 try {
                     // Проверяем токен и регистрируем устройство
@@ -2291,57 +2376,63 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + savedToken,
                             'X-Device-Id': deviceId
-                        }
+                        },
+                        body: JSON.stringify({}) // Добавляем пустое тело
                     });
                     
-                    if (response.ok) {
-                        const data = await response.json();
+                    const data = await response.json();
+                    console.log('Ответ от сервера:', data);
+                    
+                    if (response.ok && data.valid) {
+                        token = savedToken;
+                        currentUser = data.user;
                         
-                        if (data.valid) {
-                            token = savedToken;
-                            currentUser = data.user;
-                            
-                            // Обновляем информацию о пользователе
-                            document.getElementById('userName').textContent = currentUser.username;
-                            document.getElementById('userEmail').textContent = currentUser.email;
-                            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
-                            document.getElementById('userAvatarMini').textContent = currentUser.username.charAt(0);
-                            
-                            // Переключаемся на основной интерфейс
-                            document.getElementById('authPanel').style.display = 'none';
-                            document.getElementById('appContainer').style.display = 'flex';
-                            document.getElementById('appPanel').classList.add('active');
-                            document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
-                            
-                            // Показываем главную страницу
-                            showMainPage();
-                            
-                            // Загружаем данные и подключаем WebSocket
-                            loadChats();
-                            loadContacts();
-                            connectWebSocket();
-                            
-                            // Запрашиваем разрешение на микрофон
-                            await requestMicrophonePermission();
-                            
-                            console.log('Автоматический вход выполнен успешно');
-                            return true;
-                        }
+                        // Обновляем информацию о пользователе
+                        document.getElementById('userName').textContent = currentUser.username;
+                        document.getElementById('userEmail').textContent = currentUser.email;
+                        const firstChar = currentUser.username.charAt(0).toUpperCase();
+                        document.getElementById('userAvatar').textContent = firstChar;
+                        document.getElementById('userAvatarMini').textContent = firstChar;
+                        
+                        // Переключаемся на основной интерфейс
+                        document.getElementById('authPanel').style.display = 'none';
+                        document.getElementById('appContainer').style.display = 'flex';
+                        document.getElementById('appPanel').classList.add('active');
+                        
+                        // Показываем главную страницу
+                        showMainPage();
+                        
+                        // Загружаем данные и подключаем WebSocket
+                        await loadChats();
+                        await loadContacts();
+                        connectWebSocket();
+                        
+                        console.log('Автоматический вход выполнен успешно');
+                        return true;
+                    } else {
+                        console.log('Автоматический вход не удался:', data.error);
+                        // Удаляем невалидные данные
+                        clearSavedData();
                     }
                 } catch (error) {
                     console.error('Ошибка автоматического входа:', error);
+                    clearSavedData();
                 }
+            } else {
+                console.log('Автоматический вход невозможен - нет сохраненных данных');
             }
             
             // Если автоматический вход не удался
             if (savedEmail) {
                 document.getElementById('loginEmail').value = savedEmail;
+                console.log('Email восстановлен из сохранения:', savedEmail);
             }
             
             // Проверяем, было ли ранее выбрано "запомнить меня" для этого устройства
             const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
             if (rememberMe === 'true') {
                 document.getElementById('rememberMe').checked = true;
+                console.log('Опция "Запомнить меня" восстановлена');
             }
             
             return false;
@@ -2498,41 +2589,48 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 });
 
                 const data = await response.json();
+                console.log('Ответ от сервера при входе:', data);
 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     token = data.token;
                     currentUser = data.user;
+                    
+                    console.log('Вход успешен, rememberMe:', rememberMe, 'deviceId:', deviceId);
                     
                     // Сохраняем данные если выбрано "запомнить меня"
                     if (rememberMe) {
                         saveToken(token, true);
                         saveEmail(email);
+                        console.log('Данные сохранены для устройства:', deviceId);
                     } else {
                         saveToken(token, false);
+                        console.log('Данные сохранены только для сессии');
                     }
                     
                     // Обновляем информацию о пользователе
                     document.getElementById('userName').textContent = currentUser.username;
                     document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
-                    document.getElementById('userAvatarMini').textContent = currentUser.username.charAt(0);
+                    const firstChar = currentUser.username.charAt(0).toUpperCase();
+                    document.getElementById('userAvatar').textContent = firstChar;
+                    document.getElementById('userAvatarMini').textContent = firstChar;
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
                     
                     // Показываем главную страницу
                     showMainPage();
                     
                     // Загружаем данные и подключаем WebSocket
-                    loadChats();
-                    loadContacts();
+                    await loadChats();
+                    await loadContacts();
                     connectWebSocket();
                     
-                    // Запрашиваем разрешение на микрофон для голосовых сообщений и звонков
+                    // Запрашиваем разрешение на микрофон
                     await requestMicrophonePermission();
+                    
+                    showNotification('Вход выполнен успешно', 'success');
                 } else {
                     showError('loginPasswordError', data.error || 'Ошибка входа');
                 }
@@ -2597,9 +2695,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     token = data.token;
                     currentUser = data.user;
+                    
+                    console.log('Регистрация успешна, rememberMe:', rememberMe, 'deviceId:', deviceId);
                     
                     // Сохраняем данные для автоматического входа
                     saveToken(token, rememberMe);
@@ -2608,25 +2708,27 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     // Обновляем информацию о пользователе
                     document.getElementById('userName').textContent = currentUser.username;
                     document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userAvatar').textContent = currentUser.username.charAt(0);
-                    document.getElementById('userAvatarMini').textContent = currentUser.username.charAt(0);
+                    const firstChar = currentUser.username.charAt(0).toUpperCase();
+                    document.getElementById('userAvatar').textContent = firstChar;
+                    document.getElementById('userAvatarMini').textContent = firstChar;
                     
                     // Переключаемся на основной интерфейс
                     document.getElementById('authPanel').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('appPanel').classList.add('active');
-                    document.getElementById('addContactBtn').style.display = 'none'; // По умолчанию скрыта
                     
                     // Показываем главную страницу
                     showMainPage();
                     
                     // Загружаем данные и подключаем WebSocket
-                    loadChats();
-                    loadContacts();
+                    await loadChats();
+                    await loadContacts();
                     connectWebSocket();
                     
                     // Запрашиваем разрешение на микрофон
                     await requestMicrophonePermission();
+                    
+                    showNotification('Регистрация прошла успешно!', 'success');
                 } else {
                     showError('registerEmailError', data.error || 'Ошибка регистрации');
                 }
@@ -2636,8 +2738,30 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
 
+        // Показать/скрыть меню пользователя
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'block';
+                // Закрываем меню при клике вне его
+                setTimeout(() => {
+                    document.addEventListener('click', function closeMenu(e) {
+                        if (!e.target.closest('.user-info-mini')) {
+                            menu.style.display = 'none';
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    });
+                }, 10);
+            }
+        }
+
         // Функция выхода
         function logout() {
+            // Скрываем меню пользователя
+            document.getElementById('userMenu').style.display = 'none';
+            
             // Отправляем запрос на сервер для удаления сессии
             fetch(baseUrl + '/api/logout', {
                 method: 'POST',
@@ -2649,6 +2773,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             // Очищаем сохраненные данные для этого устройства
             clearSavedData();
+            console.log('Данные очищены для устройства:', deviceId);
             
             // Закрываем WebSocket соединение
             if (ws) {
@@ -2728,7 +2853,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 content.classList.remove('active');
             });
             
-            event.currentTarget.classList.add('active');
+            // Находим нажатую вкладку и делаем ее активной
+            const activeTab = Array.from(document.querySelectorAll('.nav-tab')).find(tab => 
+                tab.textContent.includes(tabName === 'chats' ? 'Чаты' : 'Контакты') ||
+                tab.textContent.includes(tabName === 'chats' ? 'Comments' : 'Users')
+            );
+            
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
             document.getElementById(tabName + 'Panel').classList.add('active');
             
             // Показываем/скрываем кнопку добавления только на вкладке контактов
@@ -2955,6 +3089,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 if (response.ok) {
                     const data = await response.json();
                     chats = data.chats || [];
+                    console.log('Загружено чатов:', chats.length);
                     displayChats(chats);
                 } else {
                     console.error('Ошибка загрузки чатов:', response.status);
@@ -3020,6 +3155,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 if (response.ok) {
                     const data = await response.json();
                     contacts = data.contacts || [];
+                    console.log('Загружено контактов:', contacts.length);
                     displayContacts(contacts);
                 } else {
                     console.error('Ошибка загрузки контактов:', response.status);
@@ -3656,7 +3792,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     showNotification('Контакт добавлен!', 'success');
                     closeModal('addContactModal');
                     loadContacts();
@@ -3682,9 +3818,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     // Открываем чат
                     openChat(data.chatId);
+                    showNotification('Чат открыт', 'success');
                 } else {
                     showNotification('Ошибка: ' + data.error, 'error');
                 }
@@ -4519,6 +4656,32 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 });
             }
         };
+
+        // Функция для отладки
+        function debugCheckStorage() {
+            console.log('=== ДЕБАГ ИНФОРМАЦИЯ ===');
+            console.log('Device ID:', deviceId);
+            console.log('LocalStorage:');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('beresta_')) {
+                    console.log('  ', key, '=', localStorage.getItem(key));
+                }
+            }
+            console.log('SessionStorage:');
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key.startsWith('beresta_')) {
+                    console.log('  ', key, '=', sessionStorage.getItem(key));
+                }
+            }
+            console.log('Текущий пользователь:', currentUser);
+            console.log('Есть токен:', !!token);
+            console.log('Текущий chatId:', currentChatId);
+            console.log('Загружено чатов:', chats.length);
+            console.log('Загружено контактов:', contacts.length);
+            console.log('=========================');
+        }
     </script>
 </body>
 </html>`;
@@ -5045,6 +5208,8 @@ async function handleRegister(req, res) {
                             (err) => {
                                 if (err) {
                                     console.error('Error saving session:', err);
+                                } else {
+                                    console.log('Session saved for device:', deviceId);
                                 }
                             }
                         );
@@ -5065,6 +5230,8 @@ async function handleRegister(req, res) {
 async function handleLogin(req, res) {
     const { email, password, rememberMe } = req.body;
     const deviceId = req.headers['x-device-id'];
+    
+    console.log('Вход пользователя:', email, 'rememberMe:', rememberMe, 'deviceId:', deviceId);
     
     db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
         if (err || !user) {
@@ -5097,6 +5264,8 @@ async function handleLogin(req, res) {
                     (err) => {
                         if (err) {
                             console.error('Error saving session:', err);
+                        } else {
+                            console.log('Session saved for device:', deviceId);
                         }
                     }
                 );
@@ -5117,6 +5286,8 @@ async function handleValidateToken(req, res) {
     const authHeader = req.headers.authorization;
     const deviceId = req.headers['x-device-id'];
     
+    console.log('Валидация токена для устройства:', deviceId);
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ valid: false, error: 'No token provided' }));
@@ -5127,6 +5298,7 @@ async function handleValidateToken(req, res) {
     
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
+        console.log('Токен расшифрован, userId:', decoded.userId);
         
         // Проверяем сессию устройства, если предоставлен deviceId
         if (deviceId) {
@@ -5134,7 +5306,17 @@ async function handleValidateToken(req, res) {
                 'SELECT token FROM user_sessions WHERE user_id = ? AND device_id = ? AND expires_at > ?',
                 [decoded.userId, deviceId, new Date().toISOString()],
                 (err, session) => {
-                    if (err || !session || session.token !== token) {
+                    if (err) {
+                        console.error('Database error:', err);
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ valid: false, error: 'Database error' }));
+                        return;
+                    }
+                    
+                    console.log('Сессия найдена:', session);
+                    
+                    if (!session || session.token !== token) {
+                        console.log('Сессия недействительна или истекла');
                         res.writeHead(401, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ valid: false, error: 'Session expired or invalid' }));
                         return;
@@ -5158,12 +5340,21 @@ async function handleValidateToken(req, res) {
 // Вспомогательная функция для получения пользователя и отправки ответа
 function getUserAndRespond(userId, res) {
     db.get('SELECT id, email, username FROM users WHERE id = ?', [userId], (err, user) => {
-        if (err || !user) {
+        if (err) {
+            console.error('Database error:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ valid: false, error: 'Database error' }));
+            return;
+        }
+        
+        if (!user) {
+            console.log('Пользователь не найден, userId:', userId);
             res.writeHead(401, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ valid: false, error: 'User not found' }));
             return;
         }
         
+        console.log('Пользователь найден:', user.username);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             valid: true,
@@ -5196,6 +5387,8 @@ async function handleLogout(req, res) {
                 (err) => {
                     if (err) {
                         console.error('Error deleting session:', err);
+                    } else {
+                        console.log('Session deleted for device:', deviceId);
                     }
                 }
             );
@@ -5222,6 +5415,8 @@ async function handleGetContacts(req, res) {
                 return;
             }
             
+            console.log('Возвращено контактов для пользователя', req.userId, ':', contacts?.length || 0);
+            
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ contacts: contacts || [] }));
         }
@@ -5231,9 +5426,18 @@ async function handleGetContacts(req, res) {
 async function handleAddContact(req, res) {
     const { email } = req.body;
     
+    console.log('Добавление контакта:', email, 'для пользователя:', req.userId);
+    
     // Находим пользователя по email
     db.get('SELECT id, username FROM users WHERE email = ?', [email], (err, contact) => {
-        if (err || !contact) {
+        if (err) {
+            console.error('Database error:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Database error' }));
+            return;
+        }
+        
+        if (!contact) {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Пользователь не найден' }));
             return;
@@ -5250,6 +5454,13 @@ async function handleAddContact(req, res) {
             'SELECT id FROM contacts WHERE user_id = ? AND contact_id = ?',
             [req.userId, contact.id],
             (err, existing) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Database error' }));
+                    return;
+                }
+                
                 if (existing) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'Контакт уже добавлен' }));
@@ -5260,12 +5471,25 @@ async function handleAddContact(req, res) {
                 db.serialize(() => {
                     db.run(
                         'INSERT INTO contacts (user_id, contact_id) VALUES (?, ?)',
-                        [req.userId, contact.id]
+                        [req.userId, contact.id],
+                        (err) => {
+                            if (err) {
+                                console.error('Error adding contact:', err);
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Error adding contact' }));
+                                return;
+                            }
+                        }
                     );
                     
                     db.run(
                         'INSERT INTO contacts (user_id, contact_id) VALUES (?, ?)',
-                        [contact.id, req.userId]
+                        [contact.id, req.userId],
+                        (err) => {
+                            if (err) {
+                                console.error('Error adding reverse contact:', err);
+                            }
+                        }
                     );
                     
                     // Создаем новый чат без названия
@@ -5303,6 +5527,8 @@ async function handleAddContact(req, res) {
                                             res.end(JSON.stringify({ error: 'Error adding chat members' }));
                                             return;
                                         }
+                                        
+                                        console.log('Контакт добавлен и чат создан, chatId:', chatId);
                                         
                                         res.writeHead(201, { 'Content-Type': 'application/json' });
                                         res.end(JSON.stringify({ 
@@ -5343,6 +5569,7 @@ async function handleGetChats(req, res) {
             }
             
             const result = chats || [];
+            console.log('Возвращено чатов для пользователя', req.userId, ':', result.length);
             
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ chats: result }));
@@ -5352,6 +5579,8 @@ async function handleGetChats(req, res) {
 
 async function handleStartChat(req, res) {
     const { contactId } = req.body;
+    
+    console.log('Создание чата с контактом:', contactId, 'для пользователя:', req.userId);
     
     // Проверяем, есть ли уже чат с этим контактом
     db.get(
@@ -5370,6 +5599,7 @@ async function handleStartChat(req, res) {
             
             if (existingChat) {
                 // Чат уже существует, возвращаем его ID
+                console.log('Чат уже существует, chatId:', existingChat.chat_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ 
                     success: true, 
@@ -5421,6 +5651,8 @@ async function handleStartChat(req, res) {
                                         return;
                                     }
                                     
+                                    console.log('Чат создан, chatId:', chatId);
+                                    
                                     res.writeHead(201, { 'Content-Type': 'application/json' });
                                     res.end(JSON.stringify({ 
                                         success: true, 
@@ -5446,12 +5678,21 @@ async function handleGetMessages(req, res) {
         return;
     }
     
+    console.log('Получение сообщений для чата:', chatId, 'пользователь:', req.userId);
+    
     // Проверяем, имеет ли пользователь доступ к этому чату
     db.get(
         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
         [chatId, req.userId],
         (err, hasAccess) => {
-            if (err || !hasAccess) {
+            if (err) {
+                console.error('Database error:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Database error' }));
+                return;
+            }
+            
+            if (!hasAccess) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Access denied' }));
                 return;
@@ -5467,6 +5708,8 @@ async function handleGetMessages(req, res) {
                         res.end(JSON.stringify({ error: 'Database error' }));
                         return;
                     }
+                    
+                    console.log('Возвращено сообщений для чата', chatId, ':', messages?.length || 0);
                     
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messages: messages || [] }));
@@ -5539,6 +5782,8 @@ wss.on('connection', (ws, req) => {
     ws.callData = null;
     ws.callAnswer = null;
     
+    console.log('Новое WebSocket подключение');
+    
     ws.on('message', async (data) => {
         try {
             const message = JSON.parse(data.toString());
@@ -5559,6 +5804,9 @@ wss.on('connection', (ws, req) => {
                         ws.userInfo = user;
                         ws.deviceId = message.deviceId;
                         
+                        // Удаляем старые подключения для этого пользователя
+                        clients.delete(user.id);
+                        // Добавляем новое подключение
                         clients.set(user.id, ws);
                         
                         console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id + ' Устройство: ' + message.deviceId);
