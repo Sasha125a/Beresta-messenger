@@ -29,7 +29,9 @@ if (!fs.existsSync(FILES_DIR)) {
 }
 
 // Инициализация базы данных (используем файловую БД для сохранения данных)
-const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'beresta.db');
+const dbPath = process.env.NODE_ENV === 'production' 
+    ? '/opt/render/project/src/beresta.db'
+    : path.join(__dirname, 'beresta.db');
 const db = new sqlite3.Database(dbPath);
 
 // Инициализация таблиц
@@ -5215,5 +5217,6 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
 
 
