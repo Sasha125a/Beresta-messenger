@@ -4220,12 +4220,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 }
             });
 
-            // Улучшаем отображение на мобильных устройствах
             if (/Mobi|Android/i.test(navigator.userAgent)) {
                 document.body.classList.add('mobile-device');
                 // Увеличиваем размеры некоторых элементов для лучшей читаемости
                 const style = document.createElement('style');
-                style.textContent = `
+                style.textContent = \`
                     .mobile-device .form-group input,
                     .mobile-device .btn {
                         font-size: 16px !important;
@@ -4243,7 +4242,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     .mobile-device .contact-info h4 {
                         font-size: 15px !important;
                     }
-                `;
+                \`;
                 document.head.appendChild(style);
             }
         };
@@ -5565,3 +5564,4 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
