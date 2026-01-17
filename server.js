@@ -181,6 +181,7 @@ function authenticate(req, res, next) {
 }
 
 // HTML шаблон с измененным интерфейсом
+// HTML шаблон с измененным интерфейсом
 const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -224,6 +225,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             align-items: center;
             padding: 10px;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            max-height: 100vh;
+            padding: 0;
+            margin: 0;
         }
 
         /* Панель авторизации */
@@ -246,9 +257,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             height: 100%;
-            max-height: 90vh;
+            max-height: 100vh;
             overflow: hidden;
             flex-direction: column;
+            margin: 0;
         }
 
         .app-panel.active {
@@ -483,6 +495,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            height: 100%;
         }
 
         .user-info {
@@ -523,6 +536,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             min-height: 0;
+            height: 100%;
         }
 
         .panel-content {
@@ -530,6 +544,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             overflow-y: auto;
             padding: 15px;
             display: none;
+            height: 100%;
         }
 
         .panel-content.active {
@@ -599,6 +614,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             position: relative;
             min-width: 0;
             min-height: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .chat-messages {
@@ -608,6 +625,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: #f9fafb;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
 
         .message {
@@ -1382,7 +1400,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
             .chat-input input {
                 padding: 10px 14px;
-                font-size: 16px; /* Увеличиваем для удобства на мобильных */
+                font-size: 16px;
             }
 
             .send-button {
@@ -1405,7 +1423,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
 
             .form-group input {
-                font-size: 16px; /* Увеличиваем для мобильных */
+                font-size: 16px;
                 padding: 14px 16px;
             }
 
@@ -1823,6 +1841,39 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             .message-content {
                 font-size: 15px;
+            }
+        }
+
+        /* Исправления для полного заполнения экрана */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .app-panel {
+                border-radius: 0;
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+            }
+
+            .auth-panel {
+                border-radius: 10px;
+                padding: 20px;
+                margin: 10px;
+                width: calc(100% - 20px);
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .app-panel {
+                box-shadow: none;
             }
         }
     </style>
@@ -5564,4 +5615,5 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
 
