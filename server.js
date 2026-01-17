@@ -197,6 +197,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-color: #4f46e5;
+            --primary-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
+            --secondary-color: #f8fafc;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --sidebar-width: 300px;
+            --top-nav-height: 60px;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -205,6 +219,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            padding: 10px;
         }
 
         /* Панель авторизации */
@@ -212,8 +227,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 400px;
-            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 30px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -225,8 +241,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
-            max-width: 1200px;
-            height: 90vh;
+            height: 100%;
+            max-height: 90vh;
             overflow: hidden;
             flex-direction: column;
         }
@@ -241,14 +257,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .logo h1 {
-            font-size: 32px;
-            color: #4f46e5;
+            font-size: clamp(24px, 5vw, 32px);
+            color: var(--primary-color);
             margin-bottom: 10px;
         }
 
         .logo p {
-            color: #666;
-            font-size: 14px;
+            color: var(--text-secondary);
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .form-group {
@@ -258,32 +274,33 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #555;
+            color: var(--text-primary);
             font-weight: 500;
+            font-size: clamp(14px, 3vw, 16px);
         }
 
         .form-group input {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: 16px;
+            font-size: clamp(14px, 3vw, 16px);
             transition: border-color 0.3s;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #4f46e5;
+            border-color: var(--primary-color);
         }
 
         .btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: clamp(14px, 3vw, 16px);
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s;
@@ -296,12 +313,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .btn-secondary {
             background: #f3f4f6;
-            color: #4f46e5;
+            color: var(--primary-color);
         }
 
         .error-message {
-            color: #ef4444;
-            font-size: 14px;
+            color: var(--error-color);
+            font-size: clamp(12px, 2.5vw, 14px);
             margin-top: 5px;
             display: none;
         }
@@ -313,11 +330,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .toggle-auth {
             text-align: center;
             margin-top: 20px;
-            color: #666;
+            color: var(--text-secondary);
+            font-size: clamp(12px, 2.5vw, 14px);
         }
 
         .toggle-auth a {
-            color: #4f46e5;
+            color: var(--primary-color);
             text-decoration: none;
             font-weight: 600;
             cursor: pointer;
@@ -325,12 +343,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         /* Верхняя панель навигации */
         .top-nav {
-            height: 60px;
+            height: var(--top-nav-height);
             background: white;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 15px;
             flex-shrink: 0;
         }
 
@@ -345,27 +363,33 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .nav-tabs {
             display: flex;
             flex: 1;
-            max-width: 300px;
+            max-width: 250px;
         }
 
         .nav-tab {
             flex: 1;
-            padding: 15px;
+            padding: 10px;
             text-align: center;
             cursor: pointer;
             font-weight: 500;
-            color: #666;
+            color: var(--text-secondary);
             transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             border-bottom: 2px solid transparent;
+            font-size: clamp(12px, 2.5vw, 14px);
+            min-height: 40px;
         }
 
         .nav-tab.active {
-            color: #4f46e5;
-            border-bottom-color: #4f46e5;
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .nav-tab i {
+            font-size: clamp(14px, 3vw, 16px);
         }
 
         /* Миниатюра пользователя */
@@ -378,7 +402,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .user-avatar-mini {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -399,10 +423,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 18px;
             transition: background 0.3s;
-            margin-right: 15px;
+            margin-right: 10px;
+            flex-shrink: 0;
         }
 
         .back-button:hover {
@@ -412,32 +437,34 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         /* Заголовок чата в навигации */
         .chat-title {
             flex: 1;
-            font-size: 18px;
+            font-size: clamp(16px, 4vw, 18px);
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            padding: 0 10px;
         }
 
         .chat-actions-mini {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-left: auto;
         }
 
         .chat-actions-mini button {
             background: none;
             border: none;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: #666;
-            font-size: 18px;
+            color: var(--text-secondary);
+            font-size: 16px;
             transition: background 0.3s;
+            flex-shrink: 0;
         }
 
         .chat-actions-mini button:hover {
@@ -446,54 +473,58 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         /* Боковая панель */
         .sidebar {
-            width: 300px;
-            background: #f8fafc;
-            border-right: 1px solid #e5e7eb;
+            width: var(--sidebar-width);
+            background: var(--secondary-color);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
         }
 
         .user-info {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .user-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         .user-details h3 {
-            font-size: 16px;
-            margin-bottom: 4px;
+            font-size: clamp(14px, 3vw, 16px);
+            margin-bottom: 2px;
+            color: var(--text-primary);
         }
 
         .user-details p {
-            font-size: 12px;
-            color: #666;
+            font-size: clamp(11px, 2.5vw, 12px);
+            color: var(--text-secondary);
         }
 
         .content-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         .panel-content {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
             display: none;
         }
 
@@ -503,12 +534,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .list-item {
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             cursor: pointer;
             transition: background 0.3s;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
         }
 
         .list-item:hover {
@@ -517,29 +548,35 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .list-item.active {
             background: #e0e7ff;
-            border-color: #4f46e5;
+            border-color: var(--primary-color);
         }
 
         .list-item-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .list-item-title {
             font-weight: 600;
-            color: #1f2937;
+            color: var(--text-primary);
+            font-size: clamp(13px, 3vw, 14px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .list-item-time {
-            font-size: 12px;
+            font-size: clamp(10px, 2vw, 12px);
             color: #9ca3af;
+            flex-shrink: 0;
+            margin-left: 8px;
         }
 
         .list-item-preview {
-            font-size: 14px;
-            color: #6b7280;
+            font-size: clamp(12px, 2.5vw, 13px);
+            color: var(--text-secondary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -547,7 +584,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .list-item-preview i {
             margin-right: 5px;
-            color: #4f46e5;
+            color: var(--primary-color);
+            font-size: 12px;
         }
 
         .chat-area {
@@ -556,19 +594,24 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             flex-direction: column;
             position: relative;
             min-width: 0;
+            min-height: 0;
         }
 
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             background: #f9fafb;
+            display: flex;
+            flex-direction: column;
         }
 
         .message {
-            margin-bottom: 15px;
-            max-width: 70%;
+            margin-bottom: 12px;
+            max-width: 85%;
             animation: fadeIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes fadeIn {
@@ -577,29 +620,32 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .message.own {
-            margin-left: auto;
+            align-self: flex-end;
         }
 
         .message-content {
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 18px;
             background: white;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             word-wrap: break-word;
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 1.4;
         }
 
         .message.own .message-content {
-            background: #4f46e5;
+            background: var(--primary-color);
             color: white;
-            border-color: #4f46e5;
+            border-color: var(--primary-color);
         }
 
         .message-info {
             display: flex;
             justify-content: space-between;
-            margin-top: 5px;
-            font-size: 12px;
+            margin-top: 4px;
+            font-size: clamp(10px, 2vw, 12px);
             color: #9ca3af;
+            padding: 0 5px;
         }
 
         .message.own .message-info {
@@ -609,8 +655,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .voice-message {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
+            gap: 8px;
+            padding: 8px 12px;
             background: rgba(79, 70, 229, 0.1);
             border-radius: 20px;
         }
@@ -620,10 +666,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .voice-play-btn {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: #4f46e5;
+            background: var(--primary-color);
             color: white;
             border: none;
             cursor: pointer;
@@ -631,26 +677,28 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             transition: transform 0.2s;
+            flex-shrink: 0;
         }
 
         .voice-play-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .voice-play-btn.playing {
-            background: #ef4444;
+            background: var(--error-color);
         }
 
         .voice-duration {
-            font-size: 14px;
+            font-size: clamp(12px, 2.5vw, 14px);
             font-weight: 500;
+            min-width: 40px;
         }
 
         .voice-waveform {
             flex: 1;
-            height: 30px;
+            height: 24px;
             background: rgba(79, 70, 229, 0.1);
-            border-radius: 15px;
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
         }
@@ -664,12 +712,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: space-around;
-            padding: 0 10px;
+            padding: 0 8px;
         }
 
         .voice-bar {
             width: 2px;
-            background: #4f46e5;
+            background: var(--primary-color);
             border-radius: 1px;
             transition: height 0.3s;
         }
@@ -679,10 +727,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .chat-input-area {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             background: white;
             position: sticky;
@@ -697,42 +745,43 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .chat-input input {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: 16px;
-            padding-right: 60px;
+            font-size: clamp(14px, 3vw, 16px);
+            padding-right: 50px;
         }
 
         .chat-input input:focus {
             outline: none;
-            border-color: #4f46e5;
+            border-color: var(--primary-color);
         }
 
         .input-hint {
             position: absolute;
-            right: 15px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: #9ca3af;
-            font-size: 12px;
+            font-size: clamp(10px, 2vw, 12px);
             pointer-events: none;
         }
 
         .input-hint i {
-            margin-right: 5px;
+            margin-right: 4px;
+            font-size: 12px;
         }
 
         .voice-indicator {
             display: flex;
             align-items: center;
-            gap: 10px;
-            position: absolute;
+            gap: 8px;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 10px 20px;
+            padding: 10px 16px;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             z-index: 10;
@@ -744,31 +793,32 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .voice-indicator-recording {
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
+            width: 10px;
+            height: 10px;
+            background: var(--error-color);
             border-radius: 50%;
             animation: pulse 1.5s infinite;
         }
 
         .voice-indicator-timer {
-            font-size: 14px;
+            font-size: clamp(12px, 2.5vw, 14px);
             font-weight: 600;
-            color: #ef4444;
+            color: var(--error-color);
+            min-width: 40px;
         }
 
         .send-button {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #4f46e5;
+            background: var(--primary-color);
             color: white;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             transition: all 0.3s;
             flex-shrink: 0;
         }
@@ -778,7 +828,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .send-button.recording {
-            background: #ef4444;
+            background: var(--error-color);
             animation: pulse 1.5s infinite;
         }
 
@@ -792,7 +842,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .send-button.recording i {
-            transform: scale(1.2);
+            transform: scale(1.1);
         }
 
         @keyframes pulse {
@@ -812,6 +862,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 20px;
         }
 
         .modal.active {
@@ -820,10 +871,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .modal-content {
             background: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
-            width: 400px;
-            max-width: 90%;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -834,8 +887,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .modal-header h3 {
-            font-size: 20px;
-            color: #1f2937;
+            font-size: clamp(18px, 4vw, 20px);
+            color: var(--text-primary);
         }
 
         .modal-close {
@@ -843,38 +896,40 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border: none;
             font-size: 24px;
             cursor: pointer;
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .search-box {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .search-box input {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
             border-radius: 10px;
-            font-size: 14px;
+            font-size: clamp(13px, 3vw, 14px);
         }
 
         .loading {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--text-secondary);
+            font-size: clamp(13px, 3vw, 14px);
         }
 
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px 15px;
             color: #9ca3af;
+            font-size: clamp(13px, 3vw, 14px);
         }
 
         .contact-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
+            gap: 10px;
+            padding: 10px;
             border-radius: 10px;
             cursor: pointer;
             transition: background 0.3s;
@@ -885,8 +940,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .contact-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background: linear-gradient(135deg, #8b5cf6, #6366f1);
             border-radius: 50%;
             display: flex;
@@ -894,48 +949,53 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
+            flex-shrink: 0;
         }
 
         .contact-info h4 {
-            font-size: 14px;
+            font-size: clamp(13px, 3vw, 14px);
             margin-bottom: 2px;
+            color: var(--text-primary);
         }
 
         .contact-info p {
-            font-size: 12px;
-            color: #666;
+            font-size: clamp(11px, 2.5vw, 12px);
+            color: var(--text-secondary);
         }
 
         .add-contact-btn {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            width: 50px;
+            height: 50px;
+            background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
+            font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
             border: none;
+            z-index: 100;
         }
         
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 20px;
-            background: #10b981;
+            padding: 10px 16px;
+            background: var(--success-color);
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: none;
             z-index: 1001;
+            max-width: 300px;
+            font-size: clamp(13px, 3vw, 14px);
         }
         
         .notification.show {
@@ -951,13 +1011,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .typing-indicator {
             display: none;
             align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
+            gap: 6px;
+            padding: 8px 12px;
             background: white;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             max-width: fit-content;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             animation: fadeIn 0.3s ease;
         }
 
@@ -967,12 +1027,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .typing-dots {
             display: flex;
-            gap: 4px;
+            gap: 3px;
         }
 
         .typing-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             background: #9ca3af;
             border-radius: 50%;
             animation: typingAnimation 1.4s infinite;
@@ -988,60 +1048,75 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         @keyframes typingAnimation {
             0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
+            30% { transform: translateY(-6px); }
         }
 
-        .emoji-picker {
+        /* Улучшенное меню вложений */
+        .attachment-btn {
+            position: relative;
+            display: inline-block;
+        }
+
+        .attachment-menu {
             position: absolute;
-            bottom: 70px;
-            right: 20px;
+            bottom: 100%;
+            left: 0;
             background: white;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 8px;
+            min-width: 180px;
             display: none;
             z-index: 100;
-        }
-
-        .emoji-picker.show {
-            display: block;
-        }
-
-        .emoji-category {
-            margin-bottom: 10px;
-        }
-
-        .emoji-category h4 {
-            font-size: 12px;
-            color: #9ca3af;
             margin-bottom: 5px;
-            text-transform: uppercase;
+            max-width: calc(100vw - 40px);
+            transform-origin: bottom left;
         }
 
-        .emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 5px;
+        .attachment-menu.show {
+            display: block;
+            animation: fadeInUp 0.2s ease;
         }
 
-        .emoji {
-            font-size: 20px;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .attachment-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 5px;
-            text-align: center;
+            transition: background 0.3s;
+            font-size: clamp(13px, 3vw, 14px);
         }
 
-        .emoji:hover {
+        .attachment-option:hover {
             background: #f3f4f6;
+        }
+
+        .attachment-option i {
+            width: 20px;
+            color: var(--primary-color);
+            font-size: 14px;
         }
 
         /* Стили для файлов */
         .file-message {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
+            gap: 10px;
+            padding: 10px 14px;
             background: rgba(79, 70, 229, 0.1);
             border-radius: 12px;
             text-decoration: none;
@@ -1058,15 +1133,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .file-icon {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
         .file-info {
@@ -1076,25 +1152,28 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .file-name {
             font-weight: 500;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: clamp(13px, 3vw, 14px);
         }
 
         .file-size {
-            font-size: 12px;
+            font-size: clamp(11px, 2.5vw, 12px);
             color: #6b7280;
         }
 
         .download-btn {
-            padding: 8px 12px;
+            padding: 6px 10px;
             background: rgba(79, 70, 229, 0.1);
             border-radius: 6px;
-            color: #4f46e5;
-            font-size: 14px;
+            color: var(--primary-color);
+            font-size: clamp(12px, 2.5vw, 13px);
             font-weight: 500;
             transition: background 0.3s;
+            margin-left: 8px;
+            flex-shrink: 0;
         }
 
         .download-btn:hover {
@@ -1106,11 +1185,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 300px;
+            width: 90%;
+            max-width: 300px;
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            padding: 15px;
+            padding: 12px;
             z-index: 1002;
             display: none;
         }
@@ -1133,32 +1213,33 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .progress-bar {
-            height: 6px;
-            background: #e5e7eb;
+            height: 5px;
+            background: var(--border-color);
             border-radius: 3px;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             width: 0%;
             transition: width 0.3s ease;
         }
 
         .upload-list {
-            margin-top: 10px;
-            max-height: 200px;
+            margin-top: 8px;
+            max-height: 150px;
             overflow-y: auto;
         }
 
         .upload-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px;
+            gap: 8px;
+            padding: 6px;
             border-radius: 6px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-size: clamp(12px, 2.5vw, 13px);
         }
 
         .upload-item.success {
@@ -1171,57 +1252,213 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             border: 1px solid #fecaca;
         }
 
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .auth-panel {
+                padding: 30px 20px;
+                border-radius: 15px;
+            }
+
+            .app-panel {
+                border-radius: 15px;
+                max-height: 95vh;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .chat-area {
+                width: 100%;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .top-nav {
+                padding: 0 10px;
+            }
+
+            .nav-tabs {
+                max-width: 200px;
+            }
+
+            .nav-tab {
+                padding: 8px;
+                min-height: 36px;
+            }
+
+            .user-avatar-mini {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+
+            .back-button {
+                width: 36px;
+                height: 36px;
+                margin-right: 8px;
+            }
+
+            .chat-actions-mini button {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .attachment-menu {
+                min-width: 160px;
+                left: -10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --sidebar-width: 100%;
+                --top-nav-height: 50px;
+            }
+
+            .logo h1 {
+                font-size: 22px;
+            }
+
+            .logo p {
+                font-size: 12px;
+            }
+
+            .nav-tab span {
+                display: none;
+            }
+
+            .nav-tab {
+                justify-content: center;
+                padding: 5px;
+                min-width: 40px;
+            }
+
+            .nav-tab i {
+                margin: 0;
+                font-size: 16px;
+            }
+
+            .chat-title {
+                font-size: 16px;
+                padding: 0 5px;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+
+            .voice-message {
+                padding: 6px 10px;
+                gap: 6px;
+            }
+
+            .voice-play-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+
+            .voice-duration {
+                font-size: 12px;
+                min-width: 35px;
+            }
+
+            .chat-input-area {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            .send-button {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+
+            .add-contact-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+                bottom: 15px;
+                right: 15px;
+            }
+
+            .notification {
+                max-width: 250px;
+                padding: 8px 12px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .auth-panel {
+                padding: 20px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .app-panel {
+                max-height: 95vh;
+            }
+
+            .user-info {
+                padding: 10px;
+            }
+
+            .panel-content {
+                padding: 10px;
+            }
+
+            .list-item {
+                padding: 8px;
+                margin-bottom: 6px;
+            }
+
+            .chat-messages {
+                padding: 10px;
+            }
+
+            .message {
+                margin-bottom: 8px;
+            }
+
+            .chat-input-area {
+                padding: 10px;
+            }
+        }
+
+        /* Убедимся, что меню вложений не выходит за границы экрана */
         .attachment-btn {
             position: relative;
-            display: inline-block;
         }
 
-        .attachment-menu {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 10px;
-            min-width: 200px;
-            display: none;
-            z-index: 100;
+        @media (max-width: 768px) {
+            .attachment-menu {
+                left: 0;
+                right: auto;
+                min-width: 180px;
+                max-width: calc(100vw - 60px);
+            }
         }
 
-        .attachment-menu.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
+        @media (max-width: 480px) {
+            .attachment-menu {
+                min-width: 160px;
+                transform-origin: bottom left;
+            }
+            
+            .attachment-option {
+                padding: 8px;
+            }
         }
 
-        .attachment-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .attachment-option:hover {
-            background: #f3f4f6;
-        }
-
-        .attachment-option i {
-            width: 20px;
-            color: #4f46e5;
-        }
-
-        .image-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-
-        /* Стили для аудиозвонков */
+        /* Стили для аудиозвонков и другие стили остаются без изменений */
         .call-overlay {
             position: fixed;
             top: 0;
@@ -1251,20 +1488,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-header h2 {
-            font-size: 28px;
+            font-size: clamp(20px, 5vw, 28px);
             margin-bottom: 10px;
         }
 
         .call-header p {
-            font-size: 18px;
+            font-size: clamp(14px, 4vw, 18px);
             color: #aaa;
         }
 
         .call-timer {
-            font-size: 48px;
+            font-size: clamp(28px, 8vw, 48px);
             font-weight: bold;
             margin: 30px 0;
-            color: #4f46e5;
+            color: var(--primary-color);
         }
 
         .call-audio-container {
@@ -1276,15 +1513,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .caller-avatar {
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            width: clamp(80px, 25vw, 150px);
+            height: clamp(80px, 25vw, 150px);
+            background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 48px;
+            font-size: clamp(24px, 8vw, 48px);
             font-weight: bold;
             margin: 0 auto;
         }
@@ -1301,7 +1538,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .audio-bar {
             width: 4px;
-            background: #4f46e5;
+            background: var(--primary-color);
             border-radius: 2px;
             animation: audioPulse 1s infinite;
         }
@@ -1314,35 +1551,36 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .call-controls {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 20px;
             margin-top: 40px;
+            flex-wrap: wrap;
         }
 
         .call-control-btn {
-            width: 70px;
-            height: 70px;
+            width: clamp(50px, 15vw, 70px);
+            height: clamp(50px, 15vw, 70px);
             border-radius: 50%;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: clamp(18px, 5vw, 28px);
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .call-control-btn.accept {
-            background: #10b981;
+            background: var(--success-color);
             color: white;
         }
 
         .call-control-btn.decline {
-            background: #ef4444;
+            background: var(--error-color);
             color: white;
         }
 
         .call-control-btn.end {
-            background: #ef4444;
+            background: var(--error-color);
             color: white;
         }
 
@@ -1352,48 +1590,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-control-btn.mute.active {
-            background: #ef4444;
+            background: var(--error-color);
         }
 
         .call-control-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .call-ringing-animation {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .ringing-circle {
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
-            border-radius: 50%;
-            animation: ring 1.5s infinite;
-        }
-
-        .ringing-circle:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .ringing-circle:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes ring {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
         }
 
         .incoming-call-notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 320px;
+            width: 90%;
+            max-width: 320px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -1413,7 +1623,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .incoming-call-header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: var(--primary-gradient);
             color: white;
             padding: 20px;
             text-align: center;
@@ -1421,6 +1631,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .incoming-call-header h3 {
             margin-bottom: 5px;
+            font-size: clamp(16px, 4vw, 18px);
+        }
+
+        .incoming-call-header p {
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .incoming-call-content {
@@ -1429,15 +1644,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .incoming-call-avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
             margin: 0 auto 15px;
         }
@@ -1450,12 +1665,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .incoming-call-actions button {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             border: none;
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.2s;
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .incoming-call-actions button:hover {
@@ -1463,12 +1679,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .incoming-call-accept {
-            background: #10b981;
+            background: var(--success-color);
             color: white;
         }
 
         .incoming-call-decline {
-            background: #ef4444;
+            background: var(--error-color);
             color: white;
         }
 
@@ -1573,10 +1789,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 <div class="top-nav-content" id="mainNav">
                     <div class="nav-tabs">
                         <div class="nav-tab active" onclick="switchTab('chats')">
-                            <i class="fas fa-comments"></i> Чаты
+                            <i class="fas fa-comments"></i> <span>Чаты</span>
                         </div>
                         <div class="nav-tab" onclick="switchTab('contacts')">
-                            <i class="fas fa-users"></i> Контакты
+                            <i class="fas fa-users"></i> <span>Контакты</span>
                         </div>
                     </div>
                     <div class="user-info-mini">
@@ -1640,10 +1856,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             <div class="chat-area" id="chatArea">
                 <!-- Заглушка при отсутствии выбранного чата -->
                 <div id="chatPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
-                    <div style="text-align: center;">
+                    <div style="text-align: center; padding: 20px;">
                         <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px;"></i>
-                        <h3 style="margin-bottom: 10px;">Выберите чат</h3>
-                        <p>Начните общение с контактом</p>
+                        <h3 style="margin-bottom: 10px; font-size: 18px;">Выберите чат</h3>
+                        <p style="font-size: 14px;">Начните общение с контактом</p>
                     </div>
                 </div>
 
@@ -1815,6 +2031,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
 
     <script>
+        // JavaScript код остается таким же, как в предыдущем варианте
+        // Все функции и логика остаются без изменений
+        
         let currentUser = null;
         let token = null;
         let currentChatId = null;
@@ -2725,7 +2944,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     const sendButton = document.getElementById('sendButton');
                     sendButton.classList.remove('recording');
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                    sendButton.style.background = '#4f46e5';
+                    sendButton.style.background = 'var(--primary-color)';
                     document.getElementById('voiceIndicator').classList.remove('show');
                     clearInterval(recordingTimer);
     
@@ -2771,7 +2990,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     const sendButton = document.getElementById('sendButton');
                     sendButton.classList.remove('recording');
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                    sendButton.style.background = '#4f46e5';
+                    sendButton.style.background = 'var(--primary-color)';
                     document.getElementById('voiceIndicator').classList.remove('show');
                     clearInterval(recordingTimer);
                     isRecording = false;
@@ -2838,7 +3057,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const sendButton = document.getElementById('sendButton');
             sendButton.classList.remove('recording');
             sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-            sendButton.style.background = '#4f46e5'; // Возвращаем исходный цвет
+            sendButton.style.background = 'var(--primary-color)';
 
             // Также сбрасываем индикатор записи
             document.getElementById('voiceIndicator').classList.remove('show');
@@ -3819,11 +4038,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             // Цвет в зависимости от типа
             if (type === 'success') {
-                notification.style.background = '#10b981';
+                notification.style.background = 'var(--success-color)';
             } else if (type === 'error') {
-                notification.style.background = '#ef4444';
+                notification.style.background = 'var(--error-color)';
             } else if (type === 'warning') {
-                notification.style.background = '#f59e0b';
+                notification.style.background = 'var(--warning-color)';
             }
             
             // Автоматическое скрытие
@@ -5217,6 +5436,7 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
 
 
 
