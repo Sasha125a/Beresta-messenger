@@ -1196,9 +1196,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
             border: none;
             z-index: 100;
+            transition: transform 0.3s, opacity 0.3s;
         }
 
-        /* Оверлей для аудио/видео звонков */
+        .add-contact-btn.hidden {
+            opacity: 0;
+            transform: scale(0);
+            pointer-events: none;
+        }
+
+        .add-contact-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Оверлей для аудио/видео звонков - НОВЫЙ ДИЗАЙН */
         .call-overlay {
             position: fixed;
             top: 0;
@@ -1218,16 +1229,103 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-container {
-            width: 90%;
-            max-width: 1000px;
-            text-align: center;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            height: 80%;
+        }
+
+        /* Видео контейнер - НОВЫЙ ДИЗАЙН */
+        .video-container-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Основное видео (собеседник) */
+        .remote-video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .remote-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Пип-видео (пользователь) */
+        .local-video-container {
+            position: absolute;
+            width: 180px;
+            height: 320px;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .local-video-container {
+                width: 120px;
+                height: 213px;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+
+        .local-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 11;
+        }
+
+        /* Аудио интерфейс (без видео) */
+        .audio-call-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+        }
+
+        .caller-avatar {
+            width: 150px;
+            height: 150px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
 
         .call-header {
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .call-header h2 {
@@ -1243,54 +1341,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         .call-timer {
             font-size: 48px;
             font-weight: bold;
-            margin: 30px 0;
+            margin: 20px 0;
             color: var(--primary-color);
-        }
-
-        .call-video-container {
-            display: flex;
-            flex: 1;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .video-container {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-            min-height: 300px;
-        }
-
-        .video-container h3 {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .video-container video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .caller-avatar {
-            width: 150px;
-            height: 150px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 48px;
-            font-weight: bold;
-            margin: 0 auto;
         }
 
         .call-audio-visualizer {
@@ -1301,7 +1353,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             align-items: center;
             gap: 3px;
-            margin: 0 auto;
+            margin: 20px auto;
         }
 
         .audio-bar {
@@ -1316,50 +1368,57 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             50% { height: 40px; }
         }
 
+        /* Панель управления звонком */
         .call-controls {
+            padding: 20px;
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            flex-shrink: 0;
             flex-wrap: wrap;
         }
 
         .call-control-btn {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px;
             cursor: pointer;
             transition: all 0.3s;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .call-control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
         }
 
         .call-control-btn.accept {
             background: var(--success-color);
-            color: white;
         }
 
         .call-control-btn.decline {
             background: var(--error-color);
-            color: white;
         }
 
         .call-control-btn.end {
             background: var(--error-color);
-            color: white;
         }
 
         .call-control-btn.mute {
             background: #6b7280;
-            color: white;
         }
 
         .call-control-btn.video {
             background: #6b7280;
-            color: white;
         }
 
         .call-control-btn.mute.active {
@@ -1371,7 +1430,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
 
         .call-control-btn:hover {
-            transform: scale(1.05);
+            transform: scale(1.1);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
@@ -1750,16 +1809,19 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 display: none;
             }
 
-            .call-video-container {
-                flex-direction: column;
-            }
-
-            .video-container {
-                min-height: 200px;
+            .call-controls {
+                gap: 15px;
             }
 
             .file-select-options {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .local-video-container {
+                width: 120px;
+                height: 160px;
+                bottom: 15px;
+                right: 15px;
             }
         }
 
@@ -1795,6 +1857,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
             .file-select-options {
                 grid-template-columns: 1fr;
+            }
+
+            .local-video-container {
+                width: 100px;
+                height: 133px;
+                bottom: 10px;
+                right: 10px;
             }
         }
 
@@ -2124,26 +2193,31 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <!-- Оверлей для аудио/видео звонков -->
     <div class="call-overlay" id="callOverlay">
         <div class="call-container">
-            <div class="call-header" id="callHeader">
-                <h2 id="callTitle">Звонок</h2>
-                <p id="callStatus">Установка соединения...</p>
-            </div>
-            
-            <div class="call-timer" id="callTimer">00:00</div>
-            
-            <div class="call-video-container" id="callVideoContainer" style="display: none;">
-                <div class="video-container">
-                    <h3>Вы</h3>
-                    <video id="localVideo" autoplay muted playsinline></video>
-                </div>
-                <div class="video-container">
-                    <h3>Собеседник</h3>
+            <!-- ВИДЕО ЗВОНОК -->
+            <div class="video-container-wrapper" id="videoContainer" style="display: none;">
+                <!-- Основное видео собеседника -->
+                <div class="remote-video-container">
                     <video id="remoteVideo" autoplay playsinline></video>
+                    <div class="video-label">Собеседник</div>
+                </div>
+                
+                <!-- Маленькое PIP видео пользователя -->
+                <div class="local-video-container">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div class="video-label">Вы</div>
                 </div>
             </div>
             
-            <div class="call-audio-container" id="callAudioContainer">
+            <!-- АУДИО ЗВОНОК -->
+            <div class="audio-call-container" id="audioContainer">
                 <div class="caller-avatar" id="callerAvatar">Т</div>
+                <div class="call-header">
+                    <h2 id="callTitle">Аудиозвонок</h2>
+                    <p id="callStatus">Установка соединения...</p>
+                </div>
+                
+                <div class="call-timer" id="callTimer">00:00</div>
+                
                 <div class="call-audio-visualizer" id="audioVisualizer">
                     <div class="audio-bar"></div>
                     <div class="audio-bar"></div>
@@ -2158,6 +2232,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 </div>
             </div>
             
+            <!-- Панель управления -->
             <div class="call-controls" id="callControls">
                 <!-- Кнопки будут добавляться динамически -->
             </div>
@@ -2257,7 +2332,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="notification" id="notification"></div>
 
     <!-- Кнопка добавления контакта -->
-    <button class="add-contact-btn" onclick="showAddContactModal()" id="addContactBtn" style="display: none;">
+    <button class="add-contact-btn hidden" onclick="showAddContactModal()" id="addContactBtn">
         <i class="fas fa-user-plus"></i>
     </button>
 
@@ -2819,7 +2894,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('mobileContactsList').style.display = 'block';
             }
             
-            document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
+            // Управляем видимостью кнопки добавления контакта
+            updateAddContactButtonVisibility();
         }
         
         function openMobileChat(chatId) {
@@ -2835,6 +2911,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('mobileChatTitle').textContent = chatName;
             }
             
+            // Скрываем кнопку добавления контакта при открытии чата
+            document.getElementById('addContactBtn').classList.add('hidden');
+            
             setTimeout(() => {
                 document.getElementById('mobileMessageInput').focus();
             }, 100);
@@ -2844,6 +2923,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             document.getElementById('mobileMainContent').style.display = 'flex';
             document.getElementById('mobileChatPanel').classList.remove('active');
             currentChatId = null;
+            
+            // Обновляем видимость кнопки при возврате к списку
+            updateAddContactButtonVisibility();
         }
         
         // ПК версия
@@ -2864,7 +2946,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('desktopContactsList').style.display = 'block';
             }
             
-            document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
+            // Управляем видимостью кнопки добавления контакта
+            updateAddContactButtonVisibility();
         }
         
         function openDesktopChat(chatId) {
@@ -2880,9 +2963,40 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('desktopChatTitle').textContent = chatName;
             }
             
+            // Скрываем кнопку добавления контакта при открытии чата
+            document.getElementById('addContactBtn').classList.add('hidden');
+            
             setTimeout(() => {
                 document.getElementById('desktopMessageInput').focus();
             }, 100);
+        }
+        
+        // Обновление видимости кнопки добавления контакта
+        function updateAddContactButtonVisibility() {
+            const addContactBtn = document.getElementById('addContactBtn');
+            const isMobileDevice = detectDevice();
+            
+            if (isMobileDevice) {
+                // На мобильном: показываем только на вкладке контактов И если не открыт чат
+                const isContactsTab = currentMobileTab === 'contacts';
+                const isChatOpen = document.getElementById('mobileChatPanel').classList.contains('active');
+                
+                if (isContactsTab && !isChatOpen) {
+                    addContactBtn.classList.remove('hidden');
+                } else {
+                    addContactBtn.classList.add('hidden');
+                }
+            } else {
+                // На ПК: показываем только на вкладке контактов И если не открыт чат
+                const isContactsTab = currentDesktopTab === 'contacts';
+                const isChatOpen = document.getElementById('desktopChatInterface').style.display !== 'none';
+                
+                if (isContactsTab && !isChatOpen) {
+                    addContactBtn.classList.remove('hidden');
+                } else {
+                    addContactBtn.classList.add('hidden');
+                }
+            }
         }
         
         // Общие функции
@@ -2896,6 +3010,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.getElementById('desktopChatInterface').style.display = 'none';
                 currentChatId = null;
             }
+            
+            // Обновляем видимость кнопки добавления контакта
+            updateAddContactButtonVisibility();
             
             loadChats();
             loadContacts();
@@ -2994,6 +3111,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             } else if (!isMobileDevice && currentDesktopTab === 'contacts') {
                 displayContacts(contacts, document.getElementById('desktopContactsList'));
             }
+            
+            // Обновляем видимость кнопки добавления контакта
+            updateAddContactButtonVisibility();
         }
         
         function displayChats(chatList, container) {
@@ -3721,11 +3841,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     await loadContacts();
                     await loadChats();
                     
-                    if (isMobile) {
-                        switchMobileTab('contacts');
-                    } else {
-                        switchDesktopTab('contacts');
-                    }
+                    // Обновляем видимость кнопки
+                    updateAddContactButtonVisibility();
                 } else {
                     showError('contactEmailError', data.error || 'Ошибка добавления контакта');
                 }
@@ -3947,6 +4064,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             const remoteVideo = document.getElementById('remoteVideo');
             if (remoteVideo && remoteStream) {
                 remoteVideo.srcObject = remoteStream;
+                console.log('Удаленное видео установлено');
+            }
+        }
+        
+        function playLocalVideo() {
+            const localVideo = document.getElementById('localVideo');
+            if (localVideo && localStream) {
+                localVideo.srcObject = localStream;
+                console.log('Локальное видео установлено');
             }
         }
         
@@ -4255,22 +4381,30 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         function showCallInterface(status, title, subtitle, isVideo) {
             isInCall = true;
             document.getElementById('callOverlay').classList.add('active');
+            
             if (title) document.getElementById('callTitle').textContent = title;
             if (subtitle) document.getElementById('callStatus').textContent = subtitle;
             
-            // Показываем/скрываем видео контейнер
+            // Показываем/скрываем видео или аудио интерфейс
             if (isVideo) {
-                document.getElementById('callVideoContainer').style.display = 'flex';
-                document.getElementById('callAudioContainer').style.display = 'none';
+                document.getElementById('videoContainer').style.display = 'block';
+                document.getElementById('audioContainer').style.display = 'none';
                 
                 // Устанавливаем локальное видео
-                const localVideo = document.getElementById('localVideo');
-                if (localVideo && localStream) {
-                    localVideo.srcObject = localStream;
+                playLocalVideo();
+                
+                // Если есть удаленное видео, устанавливаем его
+                if (remoteStream) {
+                    playRemoteVideo();
                 }
             } else {
-                document.getElementById('callVideoContainer').style.display = 'none';
-                document.getElementById('callAudioContainer').style.display = 'block';
+                document.getElementById('videoContainer').style.display = 'none';
+                document.getElementById('audioContainer').style.display = 'flex';
+                
+                // Устанавливаем аватар звонящего
+                if (currentCallData && currentCallData.callerName) {
+                    document.getElementById('callerAvatar').textContent = currentCallData.callerName.charAt(0);
+                }
             }
             
             updateCallControls();
@@ -4288,10 +4422,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             let html = '';
             
             if (isCaller && !isInCall) {
+                // Исходящий звонок (ожидание ответа)
                 html = '<button class="call-control-btn end" onclick="endCall()">' +
                        '<i class="fas fa-phone-slash"></i>' +
                        '</button>';
             } else if (isInCall) {
+                // Активный звонок
                 html = '<button class="call-control-btn mute ' + (muteAudio ? 'active' : '') + '" onclick="toggleMute()">' +
                        '<i class="fas fa-microphone' + (muteAudio ? '-slash' : '') + '"></i>' +
                        '</button>';
@@ -4323,12 +4459,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
         
         function toggleVideo() {
-            if (!localStream) return;
+            if (!localStream || !isVideoCall) return;
             
             muteVideo = !muteVideo;
             localStream.getVideoTracks().forEach(track => {
                 track.enabled = !muteVideo;
             });
+            
+            // Обновляем отображение PIP видео
+            const localVideo = document.getElementById('localVideo');
+            if (localVideo) {
+                localVideo.style.opacity = muteVideo ? '0.5' : '1';
+            }
             
             updateCallControls();
             showNotification(muteVideo ? 'Камера выключена' : 'Камера включена', 'info');
@@ -4349,6 +4491,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             document.getElementById('callTimer').textContent = minutes + ':' + seconds;
             
+            // Анимация аудио визуализатора для аудиозвонков
             if (!isVideoCall) {
                 const bars = document.querySelectorAll('.audio-bar');
                 bars.forEach((bar, index) => {
@@ -4418,6 +4561,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             muteAudio = false;
             muteVideo = false;
             iceCandidatesQueue = [];
+            isVideoCall = false;
         }
         
         async function endCall() {
@@ -6247,11 +6391,17 @@ server.listen(PORT, () => {
     console.log('• Двусторонняя аудио/видеосвязь через WebRTC');
     console.log('• Используются STUN серверы');
     console.log('• Работает на мобильных устройствах');
+    console.log('• Видеозвонки: полный экран собеседника, PIP видео пользователя');
+    console.log('• Кнопки управления: включить/выключить видео/звук, завершить звонок');
     
     console.log('\n📎 Прикрепление файлов:');
     console.log('• Поддержка фото, видео, документов и других файлов');
     console.log('• Максимальный размер файла: 100MB');
     console.log('• Индикатор загрузки и возможность отмены');
+    
+    console.log('\n👥 Управление контактами:');
+    console.log('• Кнопка добавления контакта скрывается при открытии чата');
+    console.log('• Кнопка видна только на вкладке "Контакты"');
     
     console.log('\n💾 База данных:', dbPath);
     console.log('📁 Директория загрузок:', UPLOADS_DIR);
