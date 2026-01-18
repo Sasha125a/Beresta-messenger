@@ -1089,6 +1089,393 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             z-index: 100;
         }
 
+        /* Оверлей для аудиозвонков */
+        .call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .call-overlay.active {
+            display: flex;
+        }
+
+        .call-container {
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .call-header {
+            margin-bottom: 40px;
+        }
+
+        .call-header h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .call-header p {
+            font-size: 18px;
+            color: #aaa;
+        }
+
+        .call-timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 30px 0;
+            color: var(--primary-color);
+        }
+
+        .caller-avatar {
+            width: 150px;
+            height: 150px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+
+        .call-audio-visualizer {
+            width: 100%;
+            max-width: 400px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .audio-bar {
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+            animation: audioPulse 1s infinite;
+        }
+
+        @keyframes audioPulse {
+            0%, 100% { height: 10px; }
+            50% { height: 40px; }
+        }
+
+        .call-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .call-control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .call-control-btn.accept {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .call-control-btn.decline {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .call-control-btn.end {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .call-control-btn.mute {
+            background: #6b7280;
+            color: white;
+        }
+
+        .call-control-btn.mute.active {
+            background: var(--error-color);
+        }
+
+        .call-control-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Уведомление о входящем звонке */
+        .incoming-call-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 90%;
+            max-width: 320px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2001;
+            overflow: hidden;
+            animation: slideInCall 0.3s ease;
+            display: none;
+        }
+
+        @keyframes slideInCall {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .incoming-call-notification.show {
+            display: block;
+        }
+
+        .incoming-call-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .incoming-call-header h3 {
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        .incoming-call-header p {
+            font-size: 14px;
+        }
+
+        .incoming-call-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .incoming-call-avatar {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+
+        .incoming-call-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .incoming-call-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-size: 14px;
+        }
+
+        .incoming-call-actions button:hover {
+            transform: translateY(-2px);
+        }
+
+        .incoming-call-accept {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .incoming-call-decline {
+            background: var(--error-color);
+            color: white;
+        }
+
+        /* Индикатор записи голоса */
+        .voice-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            z-index: 10;
+            display: none;
+        }
+
+        .voice-indicator.show {
+            display: flex;
+        }
+
+        .voice-indicator-recording {
+            width: 10px;
+            height: 10px;
+            background: var(--error-color);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-indicator-timer {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--error-color);
+            min-width: 40px;
+        }
+
+        /* Модальное окно добавления контакта */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* Уведомление */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            background: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1001;
+            max-width: 300px;
+            font-size: 14px;
+        }
+        
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Меню вложений */
+        .attachment-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 8px;
+            min-width: 180px;
+            display: none;
+            z-index: 100;
+            margin-bottom: 5px;
+        }
+
+        .attachment-menu.show {
+            display: block;
+            animation: fadeInUp 0.2s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .attachment-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+
+        .attachment-option:hover {
+            background: #f3f4f6;
+        }
+
+        .attachment-option i {
+            width: 20px;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+
         /* Медиа-запросы для определения устройства */
         @media (max-width: 768px) {
             .mobile-app-panel {
@@ -1128,41 +1515,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 width: calc(100% - 20px);
                 max-width: none;
                 max-height: calc(100vh - 20px);
-            }
-        }
-
-        /* Улучшения для очень маленьких экранов */
-        @media (max-height: 500px) {
-            .auth-panel {
-                padding: 15px 10px;
-            }
-            
-            .logo h1 {
-                font-size: 20px;
-            }
-            
-            .logo p {
-                font-size: 12px;
-            }
-            
-            .form-group {
-                margin-bottom: 10px;
-            }
-            
-            .form-group label {
-                font-size: 14px;
-                margin-bottom: 5px;
-            }
-            
-            .form-group input,
-            .btn {
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            .toggle-auth {
-                margin-top: 10px;
-                font-size: 12px;
             }
         }
 
@@ -1268,7 +1620,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <!-- Основной интерфейс (скрыт до входа) -->
     <div class="container" style="display: none;" id="appContainer">
         <!-- МОБИЛЬНАЯ ВЕРСИЯ -->
-        <div class="app-panel mobile-app-panel active" id="mobileAppPanel">
+        <div class="app-panel mobile-app-panel" id="mobileAppPanel">
             <!-- Главный экран: список чатов/контактов -->
             <div class="mobile-content" id="mobileMainContent">
                 <!-- Верхняя навигация с переключателем -->
@@ -1359,7 +1711,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
 
         <!-- ПК ВЕРСИЯ -->
-        <div class="app-panel desktop-app-panel active" id="desktopAppPanel">
+        <div class="app-panel desktop-app-panel" id="desktopAppPanel">
             <!-- Боковая панель -->
             <div class="desktop-sidebar">
                 <!-- Информация о пользователе -->
@@ -1475,22 +1827,123 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- Оверлей для аудиозвонков -->
+    <div class="call-overlay" id="callOverlay">
+        <div class="call-container">
+            <div class="call-header" id="callHeader">
+                <h2 id="callTitle">Аудиозвонок</h2>
+                <p id="callStatus">Установка соединения...</p>
+            </div>
+            
+            <div class="call-audio-container">
+                <div class="caller-avatar" id="callerAvatar">Т</div>
+                <div class="call-timer" id="callTimer">00:00</div>
+                <div class="call-audio-visualizer" id="audioVisualizer">
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                </div>
+            </div>
+            
+            <div class="call-controls" id="callControls">
+                <!-- Кнопки будут добавляться динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление о входящем звонке -->
+    <div class="incoming-call-notification" id="incomingCallNotification">
+        <div class="incoming-call-header">
+            <h3>Входящий звонок</h3>
+            <p>Аудиозвонок</p>
+        </div>
+        <div class="incoming-call-content">
+            <div class="incoming-call-avatar" id="incomingCallAvatar">Т</div>
+            <h4 id="incomingCallName">Имя звонящего</h4>
+            <div class="incoming-call-actions">
+                <button class="incoming-call-accept" onclick="acceptIncomingCall()">
+                    <i class="fas fa-phone"></i> Принять
+                </button>
+                <button class="incoming-call-decline" onclick="declineIncomingCall()">
+                    <i class="fas fa-phone-slash"></i> Отклонить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Индикатор записи -->
+    <div class="voice-indicator" id="voiceIndicator">
+        <div class="voice-indicator-recording"></div>
+        <div class="voice-indicator-timer" id="voiceTimer">00:00</div>
+    </div>
+
+    <!-- Модальное окно добавления контакта -->
+    <div class="modal" id="addContactModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить контакт</h3>
+                <button class="modal-close" onclick="closeModal('addContactModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="contactEmail">Email пользователя</label>
+                <input type="email" id="contactEmail" placeholder="email@example.com">
+                <div class="error-message" id="contactEmailError"></div>
+            </div>
+            <button class="btn" onclick="addContact()">Добавить</button>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification"></div>
+
     <!-- Кнопка добавления контакта -->
     <button class="add-contact-btn" onclick="showAddContactModal()" id="addContactBtn" style="display: none;">
         <i class="fas fa-user-plus"></i>
     </button>
 
-    <!-- JavaScript код -->
     <script>
-        // Основные переменные
+        // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
         let currentUser = null;
         let token = null;
         let currentChatId = null;
         let ws = null;
         let chats = [];
         let contacts = [];
-        let isMobile = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingTimer = null;
+        let recordingStartTime = null;
+        let audioElements = new Map();
+        let isRecording = false;
+        let typingTimeout = null;
+        let isTyping = false;
         let deviceId = null;
+        let isMobile = false;
+        
+        // Переменные для аудиозвонков
+        let peerConnection = null;
+        let localStream = null;
+        let remoteStream = null;
+        let callTimerInterval = null;
+        let callStartTime = null;
+        let isInCall = false;
+        let isCaller = false;
+        let currentCallData = null;
+        let muteAudio = false;
+        let iceCandidatesQueue = [];
+        let remoteAudioElement = null;
+        let ringingInterval = null;
+        let ringingAudio = null;
+        let callTimeout = null;
+        
+        // Переменные для навигации
         let currentMobileTab = 'chats';
         let currentDesktopTab = 'chats';
         
@@ -1502,19 +1955,472 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         console.log('Base URL:', baseUrl);
         console.log('WebSocket URL:', wsUrl);
         
-        // Определяем устройство
+        // ===== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА =====
         function detectDevice() {
             isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             console.log('Устройство:', isMobile ? 'Мобильное' : 'ПК');
             return isMobile;
         }
         
-        // ===== ФУНКЦИИ ДЛЯ МОБИЛЬНОГО ИНТЕРФЕЙСА =====
+        // ===== УПРАВЛЕНИЕ УСТРОЙСТВОМ И ХРАНЕНИЕМ =====
+        function generateDeviceId() {
+            let deviceId = localStorage.getItem('beresta_device_id');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('beresta_device_id', deviceId);
+            }
+            return deviceId;
+        }
         
+        function saveToken(token, rememberMe) {
+            try {
+                if (rememberMe && deviceId) {
+                    localStorage.setItem('beresta_token_' + deviceId, token);
+                    localStorage.setItem('beresta_remember_me_' + deviceId, 'true');
+                    console.log('Токен сохранен для устройства:', deviceId);
+                } else {
+                    sessionStorage.setItem('beresta_token', token);
+                    console.log('Токен сохранен в sessionStorage');
+                }
+            } catch (e) {
+                console.warn('Не удалось сохранить токен:', e);
+            }
+        }
+        
+        function loadToken() {
+            try {
+                let token = sessionStorage.getItem('beresta_token');
+                if (!token && deviceId) {
+                    const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
+                    if (rememberMe === 'true') {
+                        token = localStorage.getItem('beresta_token_' + deviceId);
+                        console.log('Токен загружен для устройства:', deviceId);
+                    }
+                }
+                return token;
+            } catch (e) {
+                console.warn('Не удалось загрузить токен:', e);
+                return null;
+            }
+        }
+        
+        function saveEmail(email) {
+            try {
+                if (deviceId) {
+                    localStorage.setItem('beresta_email_' + deviceId, email);
+                }
+            } catch (e) {
+                console.warn('Не удалось сохранить email:', e);
+            }
+        }
+        
+        function loadEmail() {
+            try {
+                if (deviceId) {
+                    return localStorage.getItem('beresta_email_' + deviceId);
+                }
+                return null;
+            } catch (e) {
+                console.warn('Не удалось загрузить email:', e);
+                return null;
+            }
+        }
+        
+        function clearSavedData() {
+            try {
+                if (deviceId) {
+                    localStorage.removeItem('beresta_token_' + deviceId);
+                    localStorage.removeItem('beresta_remember_me_' + deviceId);
+                    localStorage.removeItem('beresta_email_' + deviceId);
+                }
+                sessionStorage.removeItem('beresta_token');
+            } catch (e) {
+                console.warn('Не удалось очистить сохраненные данные:', e);
+            }
+        }
+        
+        // ===== АВТОМАТИЧЕСКИЙ ВХОД =====
+        async function autoLogin() {
+            deviceId = generateDeviceId();
+            const savedToken = loadToken();
+            const savedEmail = loadEmail();
+            
+            console.log('Попытка автоматического входа:', {
+                deviceId: deviceId,
+                hasToken: !!savedToken,
+                hasEmail: !!savedEmail
+            });
+            
+            if (savedToken && savedEmail) {
+                try {
+                    const response = await fetch(baseUrl + '/api/validate-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + savedToken,
+                            'X-Device-Id': deviceId
+                        },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.valid) {
+                        token = savedToken;
+                        currentUser = data.user;
+                        
+                        // Обновляем информацию о пользователе
+                        updateUserInfo();
+                        
+                        // Переключаемся на основной интерфейс
+                        showAppInterface();
+                        
+                        // Загружаем данные и подключаем WebSocket
+                        await loadChats();
+                        await loadContacts();
+                        connectWebSocket();
+                        
+                        console.log('Автоматический вход выполнен успешно');
+                        return true;
+                    } else {
+                        clearSavedData();
+                    }
+                } catch (error) {
+                    console.error('Ошибка автоматического входа:', error);
+                    clearSavedData();
+                }
+            }
+            
+            // Восстанавливаем сохраненный email
+            if (savedEmail) {
+                document.getElementById('loginEmail').value = savedEmail;
+            }
+            
+            // Восстанавливаем опцию "Запомнить меня"
+            const rememberMe = localStorage.getItem('beresta_remember_me_' + deviceId);
+            if (rememberMe === 'true') {
+                document.getElementById('rememberMe').checked = true;
+            }
+            
+            return false;
+        }
+        
+        // ===== WEB SOCKET СОЕДИНЕНИЕ =====
+        function connectWebSocket() {
+            if (!token) return;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected to:', wsUrl);
+                ws.send(JSON.stringify({
+                    type: 'authenticate',
+                    token: token,
+                    deviceId: deviceId
+                }));
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('WebSocket сообщение:', data.type);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'authenticated':
+                    console.log('Authenticated via WebSocket');
+                    break;
+                    
+                case 'new_message':
+                    if (data.message.chat_id === currentChatId) {
+                        displayMessage(data.message);
+                        hideTypingIndicator();
+                    } else {
+                        loadChats();
+                    }
+                    break;
+                    
+                case 'chat_created':
+                    loadChats();
+                    break;
+                    
+                case 'typing':
+                    if (data.chatId === currentChatId && data.userId !== currentUser.id) {
+                        showTypingIndicator(data.username);
+                    }
+                    break;
+                    
+                case 'call_offer':
+                    console.log('Получен call_offer от:', data.callerData.callerName);
+                    handleIncomingCall(data);
+                    break;
+                    
+                case 'call_answer':
+                    console.log('Получен call_answer от:', data.targetId);
+                    handleCallAnswer(data);
+                    break;
+                    
+                case 'call_ice_candidate':
+                    console.log('Получен call_ice_candidate от:', data.senderId);
+                    handleNewICECandidate(data);
+                    break;
+                    
+                case 'call_end':
+                    console.log('Получен call_end:', data.reason, 'от:', data.senderId);
+                    handleCallEnd(data);
+                    break;
+                    
+                case 'call_error':
+                    console.log('Получена ошибка звонка:', data.error);
+                    handleCallError(data);
+                    break;
+            }
+        }
+        
+        // ===== АВТОРИЗАЦИЯ =====
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            clearErrors();
+        }
+        
+        function showLogin() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            clearErrors();
+        }
+        
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+        }
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.add('show');
+        }
+        
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            clearErrors();
+            
+            if (!email) {
+                showError('loginEmailError', 'Введите email');
+                return;
+            }
+            
+            if (!password) {
+                showError('loginPasswordError', 'Введите пароль');
+                return;
+            }
+            
+            try {
+                const response = await fetch(baseUrl + '/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Device-Id': deviceId
+                    },
+                    body: JSON.stringify({ email, password, rememberMe })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    token = data.token;
+                    currentUser = data.user;
+                    
+                    console.log('Вход успешен, rememberMe:', rememberMe, 'deviceId:', deviceId);
+                    
+                    saveToken(token, rememberMe);
+                    saveEmail(email);
+                    
+                    updateUserInfo();
+                    showAppInterface();
+                    
+                    await loadChats();
+                    await loadContacts();
+                    connectWebSocket();
+                    
+                    await requestMicrophonePermission();
+                    
+                    showNotification('Вход выполнен успешно', 'success');
+                } else {
+                    showError('loginPasswordError', data.error || 'Ошибка входа');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('loginPasswordError', 'Ошибка подключения к серверу');
+            }
+        }
+        
+        async function requestMicrophonePermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 48000,
+                        channelCount: 1
+                    }
+                });
+                stream.getTracks().forEach(track => track.stop());
+                console.log('Микрофон доступен');
+                return true;
+            } catch (error) {
+                console.warn('Микрофон недоступен:', error);
+                showNotification('Для записи голосовых сообщений и звонков нужен доступ к микрофону', 'warning');
+                return false;
+            }
+        }
+        
+        async function register() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMeRegister').checked;
+            
+            clearErrors();
+            
+            if (!username) {
+                showError('registerUsernameError', 'Введите имя пользователя');
+                return;
+            }
+            
+            if (!email) {
+                showError('registerEmailError', 'Введите email');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('registerPasswordError', 'Пароль должен содержать минимум 6 символов');
+                return;
+            }
+            
+            try {
+                const response = await fetch(baseUrl + '/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Device-Id': deviceId
+                    },
+                    body: JSON.stringify({ username, email, password, rememberMe })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    token = data.token;
+                    currentUser = data.user;
+                    
+                    console.log('Регистрация успешна, rememberMe:', rememberMe, 'deviceId:', deviceId);
+                    
+                    saveToken(token, rememberMe);
+                    saveEmail(email);
+                    
+                    updateUserInfo();
+                    showAppInterface();
+                    
+                    await loadChats();
+                    await loadContacts();
+                    connectWebSocket();
+                    
+                    await requestMicrophonePermission();
+                    
+                    showNotification('Регистрация прошла успешно!', 'success');
+                } else {
+                    showError('registerEmailError', data.error || 'Ошибка регистрации');
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                showError('registerEmailError', 'Ошибка подключения к серверу');
+            }
+        }
+        
+        function updateUserInfo() {
+            document.getElementById('desktopUserName').textContent = currentUser.username;
+            document.getElementById('desktopUserEmail').textContent = currentUser.email;
+            const firstChar = currentUser.username.charAt(0).toUpperCase();
+            document.getElementById('desktopUserAvatar').textContent = firstChar;
+        }
+        
+        function showAppInterface() {
+            document.getElementById('authPanel').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            
+            const isMobileDevice = detectDevice();
+            if (isMobileDevice) {
+                document.getElementById('mobileAppPanel').style.display = 'flex';
+                document.getElementById('desktopAppPanel').style.display = 'none';
+            } else {
+                document.getElementById('mobileAppPanel').style.display = 'none';
+                document.getElementById('desktopAppPanel').style.display = 'flex';
+            }
+            
+            showMainPage();
+        }
+        
+        // ===== ВЫХОД ИЗ СИСТЕМЫ =====
+        function logout() {
+            fetch(baseUrl + '/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'X-Device-Id': deviceId
+                }
+            }).catch(() => {});
+            
+            clearSavedData();
+            
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            currentUser = null;
+            token = null;
+            currentChatId = null;
+            chats = [];
+            contacts = [];
+            
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('authPanel').style.display = 'block';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            
+            document.getElementById('loginPassword').value = '';
+            clearErrors();
+            
+            showNotification('Вы вышли из системы', 'info');
+        }
+        
+        // ===== УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ =====
+        
+        // Мобильная версия
         function switchMobileTab(tabName) {
             currentMobileTab = tabName;
             
-            // Обновляем активные вкладки
             document.querySelectorAll('.mobile-nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -1523,57 +2429,43 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.querySelector('.mobile-nav-tab:nth-child(1)').classList.add('active');
                 document.getElementById('mobileChatsList').style.display = 'block';
                 document.getElementById('mobileContactsList').style.display = 'none';
-                
-                // Загружаем чаты
-                loadMobileChats();
             } else {
                 document.querySelector('.mobile-nav-tab:nth-child(2)').classList.add('active');
                 document.getElementById('mobileChatsList').style.display = 'none';
                 document.getElementById('mobileContactsList').style.display = 'block';
-                
-                // Загружаем контакты
-                loadMobileContacts();
             }
             
-            // Показываем/скрываем кнопку добавления контакта
             document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
         }
         
         function openMobileChat(chatId) {
-            // Прячем главный экран, показываем экран чата
             document.getElementById('mobileMainContent').style.display = 'none';
             document.getElementById('mobileChatPanel').classList.add('active');
             
-            // Устанавливаем текущий чат и загружаем сообщения
             currentChatId = chatId;
             loadMessages(chatId);
             
-            // Обновляем заголовок чата
             const chat = chats.find(c => c.chat_id === chatId);
             if (chat) {
                 const chatName = chat.chat_name || chat.other_user_name || 'Личный чат';
                 document.getElementById('mobileChatTitle').textContent = chatName;
             }
             
-            // Фокус на поле ввода
             setTimeout(() => {
                 document.getElementById('mobileMessageInput').focus();
             }, 100);
         }
         
         function closeMobileChat() {
-            // Показываем главный экран, скрываем экран чата
             document.getElementById('mobileMainContent').style.display = 'flex';
             document.getElementById('mobileChatPanel').classList.remove('active');
             currentChatId = null;
         }
         
-        // ===== ФУНКЦИИ ДЛЯ ПК ИНТЕРФЕЙСА =====
-        
+        // ПК версия
         function switchDesktopTab(tabName) {
             currentDesktopTab = tabName;
             
-            // Обновляем активные вкладки
             document.querySelectorAll('.desktop-nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -1582,72 +2474,47 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 document.querySelector('.desktop-nav-tab:nth-child(1)').classList.add('active');
                 document.getElementById('desktopChatsList').style.display = 'block';
                 document.getElementById('desktopContactsList').style.display = 'none';
-                
-                // Загружаем чаты
-                loadDesktopChats();
             } else {
                 document.querySelector('.desktop-nav-tab:nth-child(2)').classList.add('active');
                 document.getElementById('desktopChatsList').style.display = 'none';
                 document.getElementById('desktopContactsList').style.display = 'block';
-                
-                // Загружаем контакты
-                loadDesktopContacts();
             }
             
-            // Показываем/скрываем кнопку добавления контакта
             document.getElementById('addContactBtn').style.display = tabName === 'contacts' ? 'block' : 'none';
         }
         
         function openDesktopChat(chatId) {
-            // Показываем интерфейс чата, скрываем заглушку
             document.getElementById('desktopChatPlaceholder').style.display = 'none';
             document.getElementById('desktopChatInterface').style.display = 'flex';
             
-            // Устанавливаем текущий чат и загружаем сообщения
             currentChatId = chatId;
             loadMessages(chatId);
             
-            // Обновляем заголовок чата
             const chat = chats.find(c => c.chat_id === chatId);
             if (chat) {
                 const chatName = chat.chat_name || chat.other_user_name || 'Личный чат';
                 document.getElementById('desktopChatTitle').textContent = chatName;
             }
             
-            // Фокус на поле ввода
             setTimeout(() => {
                 document.getElementById('desktopMessageInput').focus();
             }, 100);
         }
         
-        // ===== ОБЩИЕ ФУНКЦИИ =====
-        
+        // Общие функции
         function showMainPage() {
             const isMobileDevice = detectDevice();
             
             if (isMobileDevice) {
-                // В мобильной версии показываем главный экран
                 closeMobileChat();
-                
-                // Показываем соответствующую вкладку
-                if (currentMobileTab === 'chats') {
-                    loadMobileChats();
-                } else {
-                    loadMobileContacts();
-                }
             } else {
-                // В ПК версии показываем заглушку чата
                 document.getElementById('desktopChatPlaceholder').style.display = 'flex';
                 document.getElementById('desktopChatInterface').style.display = 'none';
                 currentChatId = null;
-                
-                // Показываем соответствующую вкладку
-                if (currentDesktopTab === 'chats') {
-                    loadDesktopChats();
-                } else {
-                    loadDesktopContacts();
-                }
             }
+            
+            loadChats();
+            loadContacts();
         }
         
         function openChat(chatId) {
@@ -1678,8 +2545,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
-        // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С ДАННЫМИ =====
-        
+        // ===== РАБОТА С ЧАТАМИ И КОНТАКТАМИ =====
         async function loadChats() {
             try {
                 const response = await fetch(baseUrl + '/api/chats', {
@@ -1687,19 +2553,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         'Authorization': 'Bearer ' + token
                     }
                 });
-
+                
                 if (response.ok) {
                     const data = await response.json();
                     chats = data.chats || [];
                     console.log('Загружено чатов:', chats.length);
                     
-                    // Обновляем отображение в зависимости от устройства
-                    const isMobileDevice = detectDevice();
-                    if (isMobileDevice) {
-                        loadMobileChats();
-                    } else {
-                        loadDesktopChats();
-                    }
+                    // Обновляем отображение
+                    updateChatsDisplay();
                 } else {
                     console.error('Ошибка загрузки чатов:', response.status);
                 }
@@ -1708,41 +2569,64 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
-        function loadMobileChats() {
-            const container = document.getElementById('mobileChatsList');
+        function updateChatsDisplay() {
+            const isMobileDevice = detectDevice();
             
-            if (!chats || chats.length === 0) {
-                container.innerHTML = '<div class="empty-state">Чатов пока нет</div>';
-                return;
+            if (isMobileDevice && currentMobileTab === 'chats') {
+                displayChats(chats, document.getElementById('mobileChatsList'));
+            } else if (!isMobileDevice && currentDesktopTab === 'chats') {
+                displayChats(chats, document.getElementById('desktopChatsList'));
             }
-            
-            displayChats(chats, container);
         }
         
-        function loadDesktopChats() {
-            const container = document.getElementById('desktopChatsList');
-            
-            if (!chats || chats.length === 0) {
-                container.innerHTML = '<div class="empty-state">Чатов пока нет</div>';
-                return;
+        async function loadContacts() {
+            try {
+                const response = await fetch(baseUrl + '/api/contacts', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    contacts = data.contacts || [];
+                    console.log('Загружено контактов:', contacts.length);
+                    
+                    // Обновляем отображение
+                    updateContactsDisplay();
+                } else {
+                    console.error('Ошибка загрузки контактов:', response.status);
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке контактов:', error);
             }
+        }
+        
+        function updateContactsDisplay() {
+            const isMobileDevice = detectDevice();
             
-            displayChats(chats, container);
+            if (isMobileDevice && currentMobileTab === 'contacts') {
+                displayContacts(contacts, document.getElementById('mobileContactsList'));
+            } else if (!isMobileDevice && currentDesktopTab === 'contacts') {
+                displayContacts(contacts, document.getElementById('desktopContactsList'));
+            }
         }
         
         function displayChats(chatList, container) {
+            if (!chatList || chatList.length === 0) {
+                container.innerHTML = '<div class="empty-state">Чатов пока нет</div>';
+                return;
+            }
+            
             let html = '';
             for (const chat of chatList) {
                 const chatName = chat.chat_name || chat.other_user_name || 'Личный чат';
                 let lastMessage = chat.last_message || 'Нет сообщений';
                 const time = chat.last_message_time ? formatTime(chat.last_message_time) : '';
                 
-                // Если это голосовое сообщение
                 if (chat.last_message_type === 'voice') {
                     lastMessage = '<i class="fas fa-microphone"></i> Голосовое сообщение';
-                }
-                // Если это файл
-                else if (chat.last_message_type === 'file') {
+                } else if (chat.last_message_type === 'file') {
                     lastMessage = '<i class="fas fa-file"></i> Файл: ' + chat.file_name;
                 }
                 
@@ -1757,57 +2641,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             container.innerHTML = html;
         }
         
-        async function loadContacts() {
-            try {
-                const response = await fetch(baseUrl + '/api/contacts', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    contacts = data.contacts || [];
-                    console.log('Загружено контактов:', contacts.length);
-                    
-                    // Обновляем отображение в зависимости от устройства
-                    const isMobileDevice = detectDevice();
-                    if (isMobileDevice) {
-                        loadMobileContacts();
-                    } else {
-                        loadDesktopContacts();
-                    }
-                } else {
-                    console.error('Ошибка загрузки контактов:', response.status);
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке контактов:', error);
-            }
-        }
-        
-        function loadMobileContacts() {
-            const container = document.getElementById('mobileContactsList');
-            
-            if (!contacts || contacts.length === 0) {
-                container.innerHTML = '<div class="empty-state">Контактов пока нет</div>';
-                return;
-            }
-            
-            displayContacts(contacts, container);
-        }
-        
-        function loadDesktopContacts() {
-            const container = document.getElementById('desktopContactsList');
-            
-            if (!contacts || contacts.length === 0) {
-                container.innerHTML = '<div class="empty-state">Контактов пока нет</div>';
-                return;
-            }
-            
-            displayContacts(contacts, container);
-        }
-        
         function displayContacts(contactList, container) {
+            if (!contactList || contactList.length === 0) {
+                container.innerHTML = '<div class="empty-state">Контактов пока нет</div>';
+                return;
+            }
+            
             let html = '';
             for (const contact of contactList) {
                 html += '<div class="contact-item" onclick="startChatWithContact(' + contact.id + ')">';
@@ -1867,7 +2706,1151 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
+        async function startChatWithContact(contactId) {
+            try {
+                const response = await fetch(baseUrl + '/api/start-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ contactId: contactId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    openChat(data.chatId);
+                    showNotification('Чат открыт', 'success');
+                } else {
+                    showNotification('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка подключения к серверу', 'error');
+            }
+        }
+        
+        // ===== СООБЩЕНИЯ =====
+        async function loadMessages(chatId) {
+            try {
+                const response = await fetch(baseUrl + '/api/messages/' + chatId, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayMessages(data.messages || []);
+                } else {
+                    console.error('Ошибка загрузки сообщений:', response.status);
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке сообщений:', error);
+            }
+        }
+        
+        function displayMessages(messages) {
+            const isMobileDevice = detectDevice();
+            const container = isMobileDevice ? 
+                document.getElementById('mobileChatMessages') : 
+                document.getElementById('desktopChatMessages');
+            
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="empty-state">Сообщений пока нет</div>';
+                return;
+            }
+            
+            let html = '';
+            for (const message of messages) {
+                const isOwn = message.user_id === currentUser.id;
+                html += '<div class="message ' + (isOwn ? 'own' : '') + '" data-message-id="' + message.id + '">';
+                
+                if (message.message_type === 'voice') {
+                    html += '<div class="message-content voice-message">';
+                    html += '<button class="voice-play-btn" onclick="toggleAudioPlayback(' + message.id + ')" data-audio-url="' + message.audio_url + '">';
+                    html += '<i class="fas fa-play"></i>';
+                    html += '</button>';
+                    html += '<span class="voice-duration">' + formatDuration(message.duration) + '</span>';
+                    html += '<div class="voice-waveform">';
+                    html += '<div class="voice-wave" id="waveform-' + message.id + '">';
+                    for (let i = 0; i < 20; i++) {
+                        const height = Math.random() * 20 + 5;
+                        html += '<div class="voice-bar" style="height:' + height + 'px"></div>';
+                    }
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                } else if (message.message_type === 'file') {
+                    const fileUrl = baseUrl + message.file_url;
+                    const fileIcon = getFileIcon(message.file_type);
+                    
+                    html += '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">';
+                    html += '<div class="file-icon">';
+                    html += '<i class="' + fileIcon + '"></i>';
+                    html += '</div>';
+                    html += '<div class="file-info">';
+                    html += '<div class="file-name">' + message.file_name + '</div>';
+                    html += '<div class="file-size">' + formatFileSize(message.file_size) + '</div>';
+                    html += '</div>';
+                    html += '</a>';
+                } else {
+                    html += '<div class="message-content">' + message.content + '</div>';
+                }
+                
+                html += '<div class="message-info">';
+                if (!isOwn) {
+                    html += '<span>' + message.username + '</span>';
+                }
+                html += '<span>' + formatTime(message.created_at) + '</span>';
+                html += '</div>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+            
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function displayMessage(message) {
+            const isMobileDevice = detectDevice();
+            const container = isMobileDevice ? 
+                document.getElementById('mobileChatMessages') : 
+                document.getElementById('desktopChatMessages');
+            
+            if (container.querySelector('.empty-state')) {
+                container.innerHTML = '';
+            }
+            
+            const isOwn = message.user_id === currentUser.id;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isOwn ? 'own' : '');
+            messageDiv.setAttribute('data-message-id', message.id);
+            
+            if (message.message_type === 'voice') {
+                messageDiv.innerHTML = '<div class="message-content voice-message">' +
+                    '<button class="voice-play-btn" onclick="toggleAudioPlayback(' + message.id + ')" data-audio-url="' + message.audio_url + '">' +
+                    '<i class="fas fa-play"></i>' +
+                    '</button>' +
+                    '<span class="voice-duration">' + formatDuration(message.duration) + '</span>' +
+                    '<div class="voice-waveform">' +
+                    '<div class="voice-wave" id="waveform-' + message.id + '">' +
+                    generateWaveformBars() +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="message-info">' +
+                    (isOwn ? '' : '<span>' + message.username + '</span>') +
+                    '<span>' + formatTime(message.created_at) + '</span>' +
+                    '</div>';
+            } else if (message.message_type === 'file') {
+                const fileUrl = baseUrl + message.file_url;
+                const fileIcon = getFileIcon(message.file_type);
+                
+                messageDiv.innerHTML = '<a href="' + fileUrl + '" target="_blank" download="' + message.file_name + '" class="message-content file-message">' +
+                    '<div class="file-icon">' +
+                    '<i class="' + fileIcon + '"></i>' +
+                    '</div>' +
+                    '<div class="file-info">' +
+                    '<div class="file-name">' + message.file_name + '</div>' +
+                    '<div class="file-size">' + formatFileSize(message.file_size) + '</div>' +
+                    '</div>' +
+                    '</a>' +
+                    '<div class="message-info">' +
+                    (isOwn ? '' : '<span>' + message.username + '</span>') +
+                    '<span>' + formatTime(message.created_at) + '</span>' +
+                    '</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="message-content">' + message.content + '</div>' +
+                    '<div class="message-info">' +
+                    (isOwn ? '' : '<span>' + message.username + '</span>') +
+                    '<span>' + formatTime(message.created_at) + '</span>' +
+                    '</div>';
+            }
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const isMobileDevice = detectDevice();
+            const input = isMobileDevice ? 
+                document.getElementById('mobileMessageInput') : 
+                document.getElementById('desktopMessageInput');
+            const content = input.value.trim();
+            
+            if (!content || !currentChatId || !ws) return;
+            
+            ws.send(JSON.stringify({
+                type: 'message',
+                chatId: currentChatId,
+                content: content
+            }));
+            
+            input.value = '';
+            input.focus();
+            
+            hideTypingIndicator();
+            isTyping = false;
+            if (typingTimeout) clearTimeout(typingTimeout);
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        // ===== ГОЛОСОВЫЕ СООБЩЕНИЯ =====
+        async function startVoiceRecording(e, deviceType) {
+            e.preventDefault();
+            
+            const input = deviceType === 'mobile' ? 
+                document.getElementById('mobileMessageInput') : 
+                document.getElementById('desktopMessageInput');
+            const sendButton = deviceType === 'mobile' ? 
+                document.getElementById('mobileSendButton') : 
+                document.getElementById('desktopSendButton');
+            
+            if (input.value.trim() && !isRecording) {
+                sendMessage();
+                return;
+            }
+            
+            if (isRecording || !currentChatId) {
+                return;
+            }
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    } 
+                });
+                
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    sendButton.classList.remove('recording');
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    sendButton.style.background = 'var(--primary-color)';
+                    document.getElementById('voiceIndicator').classList.remove('show');
+                    clearInterval(recordingTimer);
+                    
+                    await sendVoiceMessage(audioBlob);
+                    
+                    showNotification('Голосовое сообщение отправлено', 'success');
+                };
+                
+                mediaRecorder.start(100);
+                
+                sendButton.classList.add('recording');
+                sendButton.innerHTML = '<i class="fas fa-stop"></i>';
+                document.getElementById('voiceIndicator').classList.add('show');
+                
+                isRecording = true;
+                recordingStartTime = Date.now();
+                recordingTimer = setInterval(updateRecordingTimer, 1000);
+                updateRecordingTimer();
+                
+            } catch (error) {
+                console.error('Ошибка записи:', error);
+                showNotification('Не удалось начать запись. Проверьте доступ к микрофону.', 'error');
+            }
+        }
+        
+        function stopVoiceRecording(e, deviceType) {
+            e.preventDefault();
+            
+            if (!isRecording) return;
+            
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                if (elapsed < 1) {
+                    showNotification('Запись отменена', 'info');
+                    const sendButton = deviceType === 'mobile' ? 
+                        document.getElementById('mobileSendButton') : 
+                        document.getElementById('desktopSendButton');
+                    sendButton.classList.remove('recording');
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    sendButton.style.background = 'var(--primary-color)';
+                    document.getElementById('voiceIndicator').classList.remove('show');
+                    clearInterval(recordingTimer);
+                    isRecording = false;
+                }
+            }
+        }
+        
+        function updateRecordingTimer() {
+            if (!recordingStartTime || !isRecording) return;
+            
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            document.getElementById('voiceTimer').textContent = minutes + ':' + seconds;
+            
+            if (elapsed >= 120) {
+                stopVoiceRecording({ preventDefault: () => {} }, 'auto');
+            }
+        }
+        
+        async function sendVoiceMessage(audioBlob) {
+            if (!currentChatId || !ws) {
+                showNotification('Нет активного чата', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'voice-message.webm');
+            formData.append('chatId', currentChatId);
+            formData.append('duration', Math.floor((Date.now() - recordingStartTime) / 1000));
+            
+            try {
+                const response = await fetch(baseUrl + '/api/upload-audio', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    console.log('Голосовое сообщение отправлено');
+                } else {
+                    const error = await response.json();
+                    showNotification('Ошибка отправки: ' + error.error, 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка отправки голосового сообщения:', error);
+                showNotification('Ошибка отправки', 'error');
+            }
+        }
+        
+        function toggleAudioPlayback(messageId) {
+            const playButton = document.querySelector('[onclick="toggleAudioPlayback(' + messageId + ')"]');
+            const audioUrl = playButton.getAttribute('data-audio-url');
+            
+            if (!audioElements.has(messageId)) {
+                const audio = new Audio(baseUrl + audioUrl);
+                audioElements.set(messageId, audio);
+                
+                audio.addEventListener('play', () => {
+                    playButton.classList.add('playing');
+                    playButton.innerHTML = '<i class="fas fa-pause"></i>';
+                    animateWaveform(messageId, true);
+                });
+                
+                audio.addEventListener('pause', () => {
+                    playButton.classList.remove('playing');
+                    playButton.innerHTML = '<i class="fas fa-play"></i>';
+                    animateWaveform(messageId, false);
+                });
+                
+                audio.addEventListener('ended', () => {
+                    playButton.classList.remove('playing');
+                    playButton.innerHTML = '<i class="fas fa-play"></i>';
+                    animateWaveform(messageId, false);
+                });
+            }
+            
+            const audio = audioElements.get(messageId);
+            
+            if (audio.paused) {
+                audioElements.forEach((otherAudio, otherId) => {
+                    if (otherId !== messageId && !otherAudio.paused) {
+                        otherAudio.pause();
+                    }
+                });
+                
+                audio.play();
+            } else {
+                audio.pause();
+            }
+        }
+        
+        function animateWaveform(messageId, isPlaying) {
+            const waveform = document.getElementById('waveform-' + messageId);
+            if (!waveform) return;
+            
+            const bars = waveform.querySelectorAll('.voice-bar');
+            
+            if (isPlaying) {
+                bars.forEach(bar => {
+                    bar.style.animation = 'wave 0.5s ease-in-out infinite alternate';
+                });
+            } else {
+                bars.forEach(bar => {
+                    bar.style.animation = '';
+                });
+            }
+        }
+        
+        function generateWaveformBars() {
+            let bars = '';
+            for (let i = 0; i < 20; i++) {
+                const height = Math.random() * 20 + 5;
+                bars += '<div class="voice-bar" style="height:' + height + 'px"></div>';
+            }
+            return bars;
+        }
+        
+        // ===== ИНДИКАТОР ПЕЧАТКИ =====
+        function handleTyping() {
+            const isMobileDevice = detectDevice();
+            const input = isMobileDevice ? 
+                document.getElementById('mobileMessageInput') : 
+                document.getElementById('desktopMessageInput');
+            
+            if (!isTyping && input.value.trim()) {
+                isTyping = true;
+                if (ws && ws.readyState === WebSocket.OPEN && currentChatId) {
+                    ws.send(JSON.stringify({
+                        type: 'typing',
+                        chatId: currentChatId,
+                        userId: currentUser.id,
+                        username: currentUser.username
+                    }));
+                }
+            }
+            
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+            }, 1000);
+        }
+        
+        function showTypingIndicator(username) {
+            const isMobileDevice = detectDevice();
+            const indicator = isMobileDevice ? 
+                document.getElementById('mobileTypingIndicator') : 
+                document.getElementById('desktopTypingIndicator');
+            const typingText = isMobileDevice ? 
+                document.getElementById('mobileTypingText') : 
+                document.getElementById('desktopTypingText');
+            
+            typingText.textContent = username + ' печатает...';
+            indicator.classList.add('show');
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+            }, 3000);
+        }
+        
+        function hideTypingIndicator() {
+            const isMobileDevice = detectDevice();
+            const indicator = isMobileDevice ? 
+                document.getElementById('mobileTypingIndicator') : 
+                document.getElementById('desktopTypingIndicator');
+            indicator.classList.remove('show');
+        }
+        
+        // ===== УПРАВЛЕНИЕ КОНТАКТАМИ =====
+        function showAddContactModal() {
+            document.getElementById('addContactModal').classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            clearErrors();
+        }
+        
+        async function addContact() {
+            const email = document.getElementById('contactEmail').value.trim();
+            
+            if (!email) {
+                showError('contactEmailError', 'Введите email');
+                return;
+            }
+            
+            try {
+                const response = await fetch(baseUrl + '/api/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showNotification('Контакт добавлен!', 'success');
+                    closeModal('addContactModal');
+                    
+                    document.getElementById('contactEmail').value = '';
+                    
+                    await loadContacts();
+                    await loadChats();
+                    
+                    if (isMobile) {
+                        switchMobileTab('contacts');
+                    } else {
+                        switchDesktopTab('contacts');
+                    }
+                } else {
+                    showError('contactEmailError', data.error || 'Ошибка добавления контакта');
+                }
+            } catch (error) {
+                showError('contactEmailError', 'Ошибка подключения к серверу');
+            }
+        }
+        
+        // ===== АУДИОЗВОНКИ =====
+        const peerConnectionConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ],
+            iceTransportPolicy: 'all',
+            rtcpMuxPolicy: 'require',
+            bundlePolicy: 'max-bundle'
+        };
+        
+        async function startAudioCall() {
+            if (!currentChatId) {
+                showNotification('Выберите чат для звонка', 'warning');
+                return;
+            }
+            
+            try {
+                const otherUserId = await getOtherUserId();
+                if (!otherUserId) {
+                    showNotification('Не удалось определить собеседника', 'error');
+                    return;
+                }
+                
+                console.log('Начинаем звонок пользователю ID:', otherUserId);
+                
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 48000,
+                        channelCount: 1
+                    },
+                    video: false
+                });
+                
+                console.log('Локальный поток получен');
+                
+                peerConnection = new RTCPeerConnection(peerConnectionConfig);
+                
+                localStream.getTracks().forEach(track => {
+                    console.log('Добавление трека:', track.kind, track.id);
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                peerConnection.ontrack = (event) => {
+                    console.log('Получен удаленный трек:', event.track.kind);
+                    
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                    }
+                    
+                    remoteStream.addTrack(event.track);
+                    
+                    playRemoteAudio();
+                    
+                    console.log('Удаленный поток обработан');
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    console.log('Новый ICE кандидат:', event.candidate ? event.candidate.candidate : 'null');
+                    
+                    if (event.candidate && ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                        ws.send(JSON.stringify({
+                            type: 'call_ice_candidate',
+                            chatId: currentChatId,
+                            targetId: otherUserId,
+                            candidate: event.candidate
+                        }));
+                    }
+                };
+                
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Состояние соединения:', peerConnection.connectionState);
+                    
+                    if (peerConnection.connectionState === 'connected') {
+                        console.log('Соединение установлено!');
+                        updateCallStatus('Соединение установлено');
+                        startCallTimer();
+                        showNotification('Звонок подключен', 'success');
+                        
+                        iceCandidatesQueue = [];
+                        
+                    } else if (peerConnection.connectionState === 'disconnected' ||
+                               peerConnection.connectionState === 'failed' ||
+                               peerConnection.connectionState === 'closed') {
+                        console.log('Соединение прервано');
+                        endCall();
+                        showNotification('Соединение прервано', 'error');
+                    }
+                };
+                
+                const offerOptions = {
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: false,
+                    voiceActivityDetection: true
+                };
+                
+                console.log('Создание предложения...');
+                const offer = await peerConnection.createOffer(offerOptions);
+                console.log('Предложение создано, установка локального описания...');
+                await peerConnection.setLocalDescription(offer);
+                console.log('Локальное описание установлено');
+                
+                isCaller = true;
+                currentCallData = {
+                    chatId: currentChatId,
+                    callerId: currentUser.id,
+                    callerName: currentUser.username,
+                    targetId: otherUserId,
+                    offer: offer
+                };
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    console.log('Отправка call_offer пользователю', otherUserId);
+                    
+                    ws.send(JSON.stringify({
+                        type: 'call_offer',
+                        chatId: currentChatId,
+                        targetId: otherUserId,
+                        offer: offer,
+                        callerData: currentCallData
+                    }));
+                    
+                    showCallInterface('Исходящий звонок...', 'Исходящий звонок', 'Ожидание ответа...');
+                    
+                    callTimeout = setTimeout(() => {
+                        if (!isInCall) {
+                            console.log('Таймаут ожидания ответа');
+                            showNotification('Собеседник не отвечает', 'error');
+                            endCall();
+                        }
+                    }, 60000);
+                    
+                } else {
+                    showNotification('Ошибка соединения WebSocket', 'error');
+                    cleanupCall();
+                }
+                
+            } catch (error) {
+                console.error('Ошибка при начале звонка:', error);
+                showNotification('Не удалось начать звонок: ' + error.message, 'error');
+                cleanupCall();
+            }
+        }
+        
+        function playRemoteAudio() {
+            if (!remoteStream) {
+                console.log('Нет удаленного потока для воспроизведения');
+                return;
+            }
+            
+            try {
+                if (remoteAudioElement) {
+                    remoteAudioElement.srcObject = null;
+                }
+                
+                remoteAudioElement = new Audio();
+                remoteAudioElement.srcObject = remoteStream;
+                remoteAudioElement.autoplay = true;
+                remoteAudioElement.volume = 1.0;
+                
+                const playPromise = remoteAudioElement.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log('Автовоспроизведение заблокировано');
+                        
+                        document.addEventListener('click', function tryPlayOnce() {
+                            remoteAudioElement.play().then(() => {
+                                console.log('Удаленный звук воспроизведен после клика');
+                            }).catch(e => {
+                                console.error('Снова ошибка воспроизведения:', e);
+                            });
+                            document.removeEventListener('click', tryPlayOnce);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка создания аудио элемента:', error);
+            }
+        }
+        
+        async function handleIncomingCall(data) {
+            console.log('Входящий звонок от:', data.callerData.callerName);
+            
+            currentCallData = data.callerData;
+            currentCallData.offer = data.offer;
+            
+            document.getElementById('incomingCallName').textContent = data.callerData.callerName;
+            document.getElementById('incomingCallAvatar').textContent = data.callerData.callerName.charAt(0);
+            document.getElementById('incomingCallNotification').classList.add('show');
+            
+            playRingtone();
+            
+            setTimeout(() => {
+                if (document.getElementById('incomingCallNotification').classList.contains('show')) {
+                    console.log('Автоматическое отклонение звонка (таймаут)');
+                    declineIncomingCall();
+                }
+            }, 45000);
+        }
+        
+        function playRingtone() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                ringingAudio = audioContext;
+                
+                ringingInterval = setInterval(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Ошибка воспроизведения мелодии звонка:', error);
+            }
+        }
+        
+        function stopRingtone() {
+            if (ringingInterval) {
+                clearInterval(ringingInterval);
+                ringingInterval = null;
+            }
+            if (ringingAudio) {
+                ringingAudio.close().catch(e => console.error('Ошибка закрытия аудиоконтекста:', e));
+                ringingAudio = null;
+            }
+        }
+        
+        async function acceptIncomingCall() {
+            console.log('Принимаем входящий звонок');
+            
+            stopRingtone();
+            document.getElementById('incomingCallNotification').classList.remove('show');
+            
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 48000,
+                        channelCount: 1
+                    },
+                    video: false
+                });
+                
+                console.log('Локальный поток получен для ответа');
+                
+                peerConnection = new RTCPeerConnection(peerConnectionConfig);
+                
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                peerConnection.ontrack = (event) => {
+                    console.log('Получен удаленный трек при ответе:', event.track.kind);
+                    
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                    }
+                    
+                    remoteStream.addTrack(event.track);
+                    
+                    playRemoteAudio();
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate && ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                        ws.send(JSON.stringify({
+                            type: 'call_ice_candidate',
+                            chatId: currentCallData.chatId,
+                            targetId: currentCallData.callerId,
+                            candidate: event.candidate
+                        }));
+                    }
+                };
+                
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Состояние соединения при ответе:', peerConnection.connectionState);
+                    
+                    if (peerConnection.connectionState === 'connected') {
+                        console.log('Соединение установлено при ответе!');
+                        updateCallStatus('Соединение установлено');
+                        startCallTimer();
+                        showNotification('Звонок подключен', 'success');
+                    } else if (peerConnection.connectionState === 'disconnected' ||
+                               peerConnection.connectionState === 'failed' ||
+                               peerConnection.connectionState === 'closed') {
+                        console.log('Соединение прервано при ответе');
+                        endCall();
+                        showNotification('Соединение прервано', 'error');
+                    }
+                };
+                
+                console.log('Установка удаленного описания...');
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(currentCallData.offer));
+                console.log('Удаленное описание установлено');
+                
+                console.log('Создание ответа...');
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                console.log('Ответ создан и локальное описание установлено');
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'call_answer',
+                        chatId: currentCallData.chatId,
+                        targetId: currentCallData.callerId,
+                        answer: answer
+                    }));
+                    
+                    isCaller = false;
+                    isInCall = true;
+                    showCallInterface('Входящий звонок...', 'Аудиозвонок', 'Соединение...');
+                    
+                    document.getElementById('callerAvatar').textContent = currentCallData.callerName.charAt(0);
+                    document.getElementById('callTitle').textContent = 'Звонок с ' + currentCallData.callerName;
+                    
+                    if (iceCandidatesQueue.length > 0) {
+                        console.log('Обработка накопленных ICE кандидатов:', iceCandidatesQueue.length);
+                        for (const candidate of iceCandidatesQueue) {
+                            try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                            } catch (error) {
+                                console.error('Ошибка добавления ICE кандидата из очереди:', error);
+                            }
+                        }
+                        iceCandidatesQueue = [];
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Ошибка при принятии звонка:', error);
+                showNotification('Не удалось принять звонок: ' + error.message, 'error');
+                cleanupCall();
+            }
+        }
+        
+        function declineIncomingCall() {
+            console.log('Отклоняем входящий звонок');
+            stopRingtone();
+            document.getElementById('incomingCallNotification').classList.remove('show');
+            
+            if (ws && ws.readyState === WebSocket.OPEN && currentCallData && currentCallData.callerId) {
+                ws.send(JSON.stringify({
+                    type: 'call_end',
+                    chatId: currentCallData.chatId,
+                    targetId: currentCallData.callerId,
+                    reason: 'declined'
+                }));
+            }
+            
+            currentCallData = null;
+            
+            showNotification('Звонок отклонен', 'info');
+        }
+        
+        async function handleCallAnswer(data) {
+            console.log('Обрабатываем ответ на звонок от пользователя:', data.targetId);
+            
+            if (!peerConnection || !isCaller) {
+                console.log('Нет активного соединения или не вызывающий');
+                return;
+            }
+            
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                console.log('Удаленное описание установлено из ответа');
+                
+                if (iceCandidatesQueue.length > 0) {
+                    console.log('Обработка накопленных ICE кандидатов из ответа:', iceCandidatesQueue.length);
+                    for (const candidate of iceCandidatesQueue) {
+                        try {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                        } catch (error) {
+                            console.error('Ошибка добавления ICE кандидата:', error);
+                        }
+                    }
+                    iceCandidatesQueue = [];
+                }
+                
+            } catch (error) {
+                console.error('Ошибка при обработке ответа на звонок:', error);
+            }
+        }
+        
+        async function handleNewICECandidate(data) {
+            console.log('Обработка нового ICE кандидата от пользователя:', data.senderId);
+            
+            if (!peerConnection) {
+                console.log('Соединение еще не готово, сохраняем кандидат в очередь');
+                iceCandidatesQueue.push(data.candidate);
+                return;
+            }
+            
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                console.log('ICE кандидат успешно добавлен');
+            } catch (error) {
+                console.error('Ошибка при добавлении ICE кандидата:', error);
+            }
+        }
+        
+        function handleCallEnd(data) {
+            console.log('Обрабатываем завершение звонка:', data.reason);
+            
+            if (isInCall) {
+                endCall();
+                
+                let message = 'Звонок завершен';
+                if (data.reason === 'declined') {
+                    message = 'Собеседник отклонил звонок';
+                } else if (data.reason === 'user_disconnected') {
+                    message = 'Собеседник отключился';
+                }
+                
+                showNotification(message, 'info');
+            } else if (isCaller) {
+                hideCallInterface();
+                
+                let message = 'Звонок завершен';
+                if (data.reason === 'declined') {
+                    message = 'Собеседник отклонил звонок';
+                } else if (data.reason === 'user_offline') {
+                    message = 'Собеседник не в сети';
+                }
+                
+                showNotification(message, 'info');
+            }
+        }
+        
+        function handleCallError(data) {
+            console.log('Ошибка звонка:', data.error);
+            showNotification('Ошибка звонка: ' + data.error, 'error');
+            cleanupCall();
+        }
+        
+        async function getOtherUserId() {
+            if (!currentChatId) return null;
+            
+            try {
+                const response = await fetch(baseUrl + '/api/chat/' + currentChatId + '/other-user', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.userId;
+                }
+            } catch (error) {
+                console.error('Ошибка получения ID собеседника:', error);
+            }
+            
+            return null;
+        }
+        
+        function showCallInterface(status, title, subtitle) {
+            isInCall = true;
+            document.getElementById('callOverlay').classList.add('active');
+            if (title) document.getElementById('callTitle').textContent = title;
+            if (subtitle) document.getElementById('callStatus').textContent = subtitle;
+            updateCallControls();
+        }
+        
+        function updateCallStatus(status) {
+            const callStatusElement = document.getElementById('callStatus');
+            if (callStatusElement) {
+                callStatusElement.textContent = status;
+            }
+        }
+        
+        function updateCallControls() {
+            const controlsContainer = document.getElementById('callControls');
+            let html = '';
+            
+            if (isCaller && !isInCall) {
+                html = '<button class="call-control-btn end" onclick="endCall()">' +
+                       '<i class="fas fa-phone-slash"></i>' +
+                       '</button>';
+            } else if (isInCall) {
+                html = '<button class="call-control-btn mute ' + (muteAudio ? 'active' : '') + '" onclick="toggleMute()">' +
+                       '<i class="fas fa-microphone' + (muteAudio ? '-slash' : '') + '"></i>' +
+                       '</button>' +
+                       '<button class="call-control-btn end" onclick="endCall()">' +
+                       '<i class="fas fa-phone-slash"></i>' +
+                       '</button>';
+            }
+            
+            controlsContainer.innerHTML = html;
+        }
+        
+        function toggleMute() {
+            if (!localStream) return;
+            
+            muteAudio = !muteAudio;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !muteAudio;
+            });
+            
+            updateCallControls();
+            showNotification(muteAudio ? 'Микрофон выключен' : 'Микрофон включен', 'info');
+        }
+        
+        function startCallTimer() {
+            callStartTime = Date.now();
+            updateCallTimer();
+            callTimerInterval = setInterval(updateCallTimer, 1000);
+        }
+        
+        function updateCallTimer() {
+            if (!callStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            document.getElementById('callTimer').textContent = minutes + ':' + seconds;
+            
+            const bars = document.querySelectorAll('.audio-bar');
+            bars.forEach((bar, index) => {
+                const height = muteAudio ? 10 : Math.random() * 30 + 10;
+                bar.style.height = height + 'px';
+            });
+        }
+        
+        function hideCallInterface() {
+            isInCall = false;
+            isCaller = false;
+            document.getElementById('callOverlay').classList.remove('active');
+            
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+        }
+        
+        function cleanupCall() {
+            console.log('Очистка ресурсов звонка');
+            
+            if (callTimeout) {
+                clearTimeout(callTimeout);
+                callTimeout = null;
+            }
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                localStream = null;
+            }
+            
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                remoteStream = null;
+            }
+            
+            if (remoteAudioElement) {
+                remoteAudioElement.srcObject = null;
+                remoteAudioElement = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+            
+            hideCallInterface();
+            isInCall = false;
+            isCaller = false;
+            currentCallData = null;
+            muteAudio = false;
+            iceCandidatesQueue = [];
+        }
+        
+        async function endCall() {
+            console.log('Завершение звонка');
+            
+            if (ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                const targetId = isCaller ? currentCallData.targetId : currentCallData.callerId;
+                
+                if (targetId) {
+                    ws.send(JSON.stringify({
+                        type: 'call_end',
+                        chatId: currentCallData.chatId,
+                        targetId: targetId,
+                        reason: 'ended_by_user'
+                    }));
+                }
+            }
+            
+            cleanupCall();
+            
+            showNotification('Звонок завершен', 'info');
+        }
+        
         // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification show';
+            
+            if (type === 'success') {
+                notification.style.background = 'var(--success-color)';
+            } else if (type === 'error') {
+                notification.style.background = 'var(--error-color)';
+            } else if (type === 'warning') {
+                notification.style.background = 'var(--warning-color)';
+            }
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
         
         function formatTime(dateString) {
             if (!dateString) return '';
@@ -1890,20 +3873,58 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return minutes + ':' + secs.toString().padStart(2, '0');
+        }
         
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function getFileIcon(fileType) {
+            if (fileType.includes('image')) return 'fas fa-image';
+            if (fileType.includes('pdf')) return 'fas fa-file-pdf';
+            if (fileType.includes('word') || fileType.includes('document')) return 'fas fa-file-word';
+            if (fileType.includes('excel')) return 'fas fa-file-excel';
+            if (fileType.includes('video')) return 'fas fa-file-video';
+            if (fileType.includes('audio')) return 'fas fa-file-audio';
+            if (fileType.includes('zip') || fileType.includes('archive')) return 'fas fa-file-archive';
+            if (fileType.includes('text')) return 'fas fa-file-alt';
+            return 'fas fa-file';
+        }
+        
+        function toggleAttachmentMenu(deviceType) {
+            // Простая реализация - можно расширить
+            showNotification('Функция прикрепления файлов в разработке', 'info');
+        }
+        
+        function showChatInfo() {
+            showNotification('Информация о чате в разработке', 'info');
+        }
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.onload = async function() {
-            // Определяем устройство
             isMobile = detectDevice();
+            deviceId = generateDeviceId();
             
-            // Настраиваем отображение в зависимости от устройства
-            if (isMobile) {
-                document.getElementById('mobileAppPanel').style.display = 'flex';
-                document.getElementById('desktopAppPanel').style.display = 'none';
-            } else {
-                document.getElementById('mobileAppPanel').style.display = 'none';
-                document.getElementById('desktopAppPanel').style.display = 'flex';
+            // Пробуем выполнить автоматический вход
+            const autoLoggedIn = await autoLogin();
+            
+            if (!autoLoggedIn) {
+                document.getElementById('authPanel').style.display = 'block';
             }
+            
+            // Добавляем CSS для анимации волн
+            const style = document.createElement('style');
+            style.textContent = '@keyframes wave { from { height: 5px; } to { height: 25px; } }';
+            document.head.appendChild(style);
             
             console.log('Application initialized');
             console.log('Base URL:', baseUrl);
@@ -3453,4 +5474,5 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
 
