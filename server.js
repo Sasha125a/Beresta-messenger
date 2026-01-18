@@ -16,17 +16,14 @@ const PROTOCOL = process.env.NODE_ENV === 'production' ? 'https' : 'http';
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const AUDIO_DIR = path.join(UPLOADS_DIR, 'audio');
 const FILES_DIR = path.join(UPLOADS_DIR, 'files');
+const VIDEOS_DIR = path.join(UPLOADS_DIR, 'videos');
 
 // Создаем директории для загрузок
-if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-if (!fs.existsSync(AUDIO_DIR)) {
-    fs.mkdirSync(AUDIO_DIR, { recursive: true });
-}
-if (!fs.existsSync(FILES_DIR)) {
-    fs.mkdirSync(FILES_DIR, { recursive: true });
-}
+[UPLOADS_DIR, AUDIO_DIR, FILES_DIR, VIDEOS_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
 
 // Инициализация базы данных (используем файловую БД для сохранения данных)
 const dbPath = process.env.NODE_ENV === 'production' 
@@ -91,6 +88,7 @@ db.serialize(() => {
             user_id INTEGER NOT NULL,
             content TEXT,
             audio_url TEXT,
+            video_url TEXT,
             file_url TEXT,
             file_name TEXT,
             file_size INTEGER,
@@ -349,6 +347,70 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             align-items: center;
             padding: 0 15px;
             flex-shrink: 0;
+            position: relative;
+        }
+
+        .mobile-profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .mobile-profile-menu {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .mobile-profile-menu.show {
+            display: block;
+            animation: fadeInDown 0.3s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mobile-profile-menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mobile-profile-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-profile-menu-item:hover {
+            background: #f3f4f6;
+        }
+
+        .mobile-profile-menu-item i {
+            color: var(--text-secondary);
+            width: 20px;
         }
 
         .mobile-nav-tabs {
@@ -871,6 +933,53 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             background: white;
         }
 
+        /* Видео сообщения */
+        .video-message {
+            max-width: 300px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .video-message video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .video-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .video-play-btn:hover {
+            background: white;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .video-info {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
         /* Файловые сообщения */
         .file-message {
             display: flex;
@@ -1089,7 +1198,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             z-index: 100;
         }
 
-        /* Оверлей для аудиозвонков */
+        /* Оверлей для аудио/видео звонков */
         .call-overlay {
             position: fixed;
             top: 0;
@@ -1110,12 +1219,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
         .call-container {
             width: 90%;
-            max-width: 800px;
+            max-width: 1000px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 80%;
         }
 
         .call-header {
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         .call-header h2 {
@@ -1133,6 +1245,38 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             font-weight: bold;
             margin: 30px 0;
             color: var(--primary-color);
+        }
+
+        .call-video-container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .video-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            min-height: 300px;
+        }
+
+        .video-container h3 {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .caller-avatar {
@@ -1157,6 +1301,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             justify-content: center;
             align-items: center;
             gap: 3px;
+            margin: 0 auto;
         }
 
         .audio-bar {
@@ -1175,7 +1320,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin-top: 40px;
+            margin-top: 20px;
             flex-wrap: wrap;
         }
 
@@ -1212,7 +1357,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: white;
         }
 
+        .call-control-btn.video {
+            background: #6b7280;
+            color: white;
+        }
+
         .call-control-btn.mute.active {
+            background: var(--error-color);
+        }
+
+        .call-control-btn.video.active {
             background: var(--error-color);
         }
 
@@ -1397,6 +1551,71 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             color: var(--text-secondary);
         }
 
+        /* Модальное окно выбора файла */
+        .file-select-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            padding: 20px;
+        }
+
+        .file-select-modal.active {
+            display: flex;
+        }
+
+        .file-select-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .file-select-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .file-select-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-select-option:hover {
+            border-color: var(--primary-color);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .file-select-option i {
+            font-size: 32px;
+            color: var(--primary-color);
+        }
+
+        .file-select-option span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
         /* Уведомление */
         .notification {
             position: fixed;
@@ -1476,6 +1695,51 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             font-size: 14px;
         }
 
+        /* Индикатор загрузки файла */
+        .upload-progress {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1002;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .upload-cancel {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         /* Медиа-запросы для определения устройства */
         @media (max-width: 768px) {
             .mobile-app-panel {
@@ -1484,6 +1748,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             .desktop-app-panel {
                 display: none;
+            }
+
+            .call-video-container {
+                flex-direction: column;
+            }
+
+            .video-container {
+                min-height: 200px;
+            }
+
+            .file-select-options {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -1515,6 +1791,10 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 width: calc(100% - 20px);
                 max-width: none;
                 max-height: calc(100vh - 20px);
+            }
+
+            .file-select-options {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1625,6 +1905,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             <div class="mobile-content" id="mobileMainContent">
                 <!-- Верхняя навигация с переключателем -->
                 <div class="mobile-top-nav">
+                    <button class="mobile-profile-btn" id="mobileProfileBtn" onclick="toggleMobileProfileMenu()">Т</button>
+                    <div class="mobile-profile-menu" id="mobileProfileMenu">
+                        <div class="mobile-profile-menu-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Выйти</span>
+                        </div>
+                    </div>
+                    
                     <div class="mobile-nav-tabs">
                         <div class="mobile-nav-tab active" onclick="switchMobileTab('chats')">
                             <i class="fas fa-comments"></i> <span class="tab-text">Чаты</span>
@@ -1665,6 +1953,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     <div class="chat-actions">
                         <button class="chat-action-btn" onclick="startAudioCall()" title="Аудиозвонок">
                             <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="chat-action-btn" onclick="startVideoCall()" title="Видеозвонок">
+                            <i class="fas fa-video"></i>
                         </button>
                         <button class="chat-action-btn" onclick="showChatInfo()" title="Информация о чате">
                             <i class="fas fa-info-circle"></i>
@@ -1781,6 +2072,9 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                             <button onclick="startAudioCall()" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 18px;">
                                 <i class="fas fa-phone"></i>
                             </button>
+                            <button onclick="startVideoCall()" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 18px;">
+                                <i class="fas fa-video"></i>
+                            </button>
                             <button onclick="showChatInfo()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 18px;">
                                 <i class="fas fa-info-circle"></i>
                             </button>
@@ -1827,17 +2121,29 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- Оверлей для аудиозвонков -->
+    <!-- Оверлей для аудио/видео звонков -->
     <div class="call-overlay" id="callOverlay">
         <div class="call-container">
             <div class="call-header" id="callHeader">
-                <h2 id="callTitle">Аудиозвонок</h2>
+                <h2 id="callTitle">Звонок</h2>
                 <p id="callStatus">Установка соединения...</p>
             </div>
             
-            <div class="call-audio-container">
+            <div class="call-timer" id="callTimer">00:00</div>
+            
+            <div class="call-video-container" id="callVideoContainer" style="display: none;">
+                <div class="video-container">
+                    <h3>Вы</h3>
+                    <video id="localVideo" autoplay muted playsinline></video>
+                </div>
+                <div class="video-container">
+                    <h3>Собеседник</h3>
+                    <video id="remoteVideo" autoplay playsinline></video>
+                </div>
+            </div>
+            
+            <div class="call-audio-container" id="callAudioContainer">
                 <div class="caller-avatar" id="callerAvatar">Т</div>
-                <div class="call-timer" id="callTimer">00:00</div>
                 <div class="call-audio-visualizer" id="audioVisualizer">
                     <div class="audio-bar"></div>
                     <div class="audio-bar"></div>
@@ -1862,7 +2168,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="incoming-call-notification" id="incomingCallNotification">
         <div class="incoming-call-header">
             <h3>Входящий звонок</h3>
-            <p>Аудиозвонок</p>
+            <p id="incomingCallType">Аудиозвонок</p>
         </div>
         <div class="incoming-call-content">
             <div class="incoming-call-avatar" id="incomingCallAvatar">Т</div>
@@ -1900,6 +2206,53 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- Модальное окно выбора файла -->
+    <div class="file-select-modal" id="fileSelectModal">
+        <div class="file-select-content">
+            <div class="modal-header">
+                <h3>Прикрепить файл</h3>
+                <button class="modal-close" onclick="closeModal('fileSelectModal')">&times;</button>
+            </div>
+            <div class="file-select-options">
+                <div class="file-select-option" onclick="selectFileType('image')">
+                    <i class="fas fa-image"></i>
+                    <span>Фото</span>
+                </div>
+                <div class="file-select-option" onclick="selectFileType('video')">
+                    <i class="fas fa-video"></i>
+                    <span>Видео</span>
+                </div>
+                <div class="file-select-option" onclick="selectFileType('document')">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Документ</span>
+                </div>
+                <div class="file-select-option" onclick="selectFileType('audio')">
+                    <i class="fas fa-file-audio"></i>
+                    <span>Аудио</span>
+                </div>
+                <div class="file-select-option" onclick="selectFileType('other')">
+                    <i class="fas fa-file"></i>
+                    <span>Другой файл</span>
+                </div>
+                <div class="file-select-option" onclick="recordVideo()">
+                    <i class="fas fa-video"></i>
+                    <span>Записать видео</span>
+                </div>
+            </div>
+            <input type="file" id="fileInput" class="file-input-hidden" accept="*/*" onchange="handleFileSelect(this.files)">
+        </div>
+    </div>
+
+    <!-- Индикатор загрузки файла -->
+    <div class="upload-progress" id="uploadProgress">
+        <div>Загрузка файла...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="uploadProgressFill"></div>
+        </div>
+        <div id="uploadFileName"></div>
+        <button class="upload-cancel" onclick="cancelUpload()">Отменить</button>
+    </div>
+
     <!-- Уведомление -->
     <div class="notification" id="notification"></div>
 
@@ -1927,7 +2280,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let deviceId = null;
         let isMobile = false;
         
-        // Переменные для аудиозвонков
+        // Переменные для звонков
         let peerConnection = null;
         let localStream = null;
         let remoteStream = null;
@@ -1937,11 +2290,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         let isCaller = false;
         let currentCallData = null;
         let muteAudio = false;
+        let muteVideo = false;
         let iceCandidatesQueue = [];
         let remoteAudioElement = null;
         let ringingInterval = null;
         let ringingAudio = null;
         let callTimeout = null;
+        let isVideoCall = false;
+        let currentFileUpload = null;
         
         // Переменные для навигации
         let currentMobileTab = 'chats';
@@ -2263,7 +2619,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     await loadContacts();
                     connectWebSocket();
                     
-                    await requestMicrophonePermission();
+                    await requestMediaPermission();
                     
                     showNotification('Вход выполнен успешно', 'success');
                 } else {
@@ -2275,7 +2631,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
-        async function requestMicrophonePermission() {
+        async function requestMediaPermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
@@ -2346,7 +2702,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     await loadContacts();
                     connectWebSocket();
                     
-                    await requestMicrophonePermission();
+                    await requestMediaPermission();
                     
                     showNotification('Регистрация прошла успешно!', 'success');
                 } else {
@@ -2359,10 +2715,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
         
         function updateUserInfo() {
+            const firstChar = currentUser.username.charAt(0).toUpperCase();
+            
             document.getElementById('desktopUserName').textContent = currentUser.username;
             document.getElementById('desktopUserEmail').textContent = currentUser.email;
-            const firstChar = currentUser.username.charAt(0).toUpperCase();
             document.getElementById('desktopUserAvatar').textContent = firstChar;
+            
+            if (isMobile) {
+                document.getElementById('mobileProfileBtn').textContent = firstChar;
+            }
         }
         
         function showAppInterface() {
@@ -2379,6 +2740,29 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
             
             showMainPage();
+        }
+        
+        // ===== МОБИЛЬНОЕ МЕНЮ ПРОФИЛЯ =====
+        function toggleMobileProfileMenu() {
+            const menu = document.getElementById('mobileProfileMenu');
+            menu.classList.toggle('show');
+            
+            // Закрываем меню при клике вне его
+            if (menu.classList.contains('show')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeMobileProfileMenuOutside);
+                }, 10);
+            }
+        }
+        
+        function closeMobileProfileMenuOutside(event) {
+            const menu = document.getElementById('mobileProfileMenu');
+            const btn = document.getElementById('mobileProfileBtn');
+            
+            if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                menu.classList.remove('show');
+                document.removeEventListener('click', closeMobileProfileMenuOutside);
+            }
         }
         
         // ===== ВЫХОД ИЗ СИСТЕМЫ =====
@@ -2628,6 +3012,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     lastMessage = '<i class="fas fa-microphone"></i> Голосовое сообщение';
                 } else if (chat.last_message_type === 'file') {
                     lastMessage = '<i class="fas fa-file"></i> Файл: ' + chat.file_name;
+                } else if (chat.last_message_type === 'video') {
+                    lastMessage = '<i class="fas fa-video"></i> Видео';
                 }
                 
                 html += '<div class="list-item" onclick="openChat(' + chat.chat_id + ')">';
@@ -2781,6 +3167,16 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     html += '</div>';
                     html += '</div>';
                     html += '</div>';
+                } else if (message.message_type === 'video') {
+                    html += '<div class="message-content video-message">';
+                    html += '<div style="position: relative;">';
+                    html += '<video src="' + baseUrl + message.video_url + '" controls style="width: 100%; height: auto;"></video>';
+                    html += '</div>';
+                    html += '<div class="video-info">';
+                    html += '<span>Видео</span>';
+                    html += '<span>' + formatDuration(message.duration) + '</span>';
+                    html += '</div>';
+                    html += '</div>';
                 } else if (message.message_type === 'file') {
                     const fileUrl = baseUrl + message.file_url;
                     const fileIcon = getFileIcon(message.file_type);
@@ -2836,6 +3232,20 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     '<div class="voice-wave" id="waveform-' + message.id + '">' +
                     generateWaveformBars() +
                     '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="message-info">' +
+                    (isOwn ? '' : '<span>' + message.username + '</span>') +
+                    '<span>' + formatTime(message.created_at) + '</span>' +
+                    '</div>';
+            } else if (message.message_type === 'video') {
+                messageDiv.innerHTML = '<div class="message-content video-message">' +
+                    '<div style="position: relative;">' +
+                    '<video src="' + baseUrl + message.video_url + '" controls style="width: 100%; height: auto;"></video>' +
+                    '</div>' +
+                    '<div class="video-info">' +
+                    '<span>Видео</span>' +
+                    '<span>' + formatDuration(message.duration) + '</span>' +
                     '</div>' +
                     '</div>' +
                     '<div class="message-info">' +
@@ -3011,7 +3421,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         }
         
         async function sendVoiceMessage(audioBlob) {
-            if (!currentChatId || !ws) {
+            if (!currentChatId) {
                 showNotification('Нет активного чата', 'error');
                 return;
             }
@@ -3108,6 +3518,118 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 bars += '<div class="voice-bar" style="height:' + height + 'px"></div>';
             }
             return bars;
+        }
+        
+        // ===== ПРИКРЕПЛЕНИЕ ФАЙЛОВ =====
+        function toggleAttachmentMenu(deviceType) {
+            document.getElementById('fileSelectModal').classList.add('active');
+        }
+        
+        function selectFileType(type) {
+            const input = document.getElementById('fileInput');
+            let accept = '';
+            
+            switch(type) {
+                case 'image':
+                    accept = 'image/*';
+                    break;
+                case 'video':
+                    accept = 'video/*';
+                    break;
+                case 'audio':
+                    accept = 'audio/*';
+                    break;
+                case 'document':
+                    accept = '.pdf,.doc,.docx,.txt,.rtf';
+                    break;
+                case 'other':
+                    accept = '*/*';
+                    break;
+            }
+            
+            input.accept = accept;
+            input.click();
+        }
+        
+        function recordVideo() {
+            // Для упрощения используем файловый ввод для видео
+            selectFileType('video');
+        }
+        
+        async function handleFileSelect(files) {
+            if (!files.length || !currentChatId) return;
+            
+            const file = files[0];
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            
+            if (file.size > maxSize) {
+                showNotification('Файл слишком большой (максимум 100MB)', 'error');
+                return;
+            }
+            
+            closeModal('fileSelectModal');
+            
+            // Показываем индикатор загрузки
+            showUploadProgress(file.name);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('chatId', currentChatId);
+            
+            try {
+                currentFileUpload = new XMLHttpRequest();
+                
+                currentFileUpload.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        updateUploadProgress(percentComplete);
+                    }
+                });
+                
+                currentFileUpload.onreadystatechange = () => {
+                    if (currentFileUpload.readyState === 4) {
+                        hideUploadProgress();
+                        if (currentFileUpload.status === 200) {
+                            showNotification('Файл отправлен', 'success');
+                        } else {
+                            showNotification('Ошибка отправки файла', 'error');
+                        }
+                        currentFileUpload = null;
+                    }
+                };
+                
+                currentFileUpload.open('POST', baseUrl + '/api/upload-file');
+                currentFileUpload.setRequestHeader('Authorization', 'Bearer ' + token);
+                currentFileUpload.send(formData);
+                
+            } catch (error) {
+                console.error('Ошибка отправки файла:', error);
+                hideUploadProgress();
+                showNotification('Ошибка отправки файла', 'error');
+            }
+        }
+        
+        function showUploadProgress(fileName) {
+            document.getElementById('uploadFileName').textContent = fileName;
+            document.getElementById('uploadProgress').classList.add('show');
+        }
+        
+        function updateUploadProgress(percent) {
+            document.getElementById('uploadProgressFill').style.width = percent + '%';
+        }
+        
+        function hideUploadProgress() {
+            document.getElementById('uploadProgress').classList.remove('show');
+            document.getElementById('uploadProgressFill').style.width = '0%';
+        }
+        
+        function cancelUpload() {
+            if (currentFileUpload) {
+                currentFileUpload.abort();
+                currentFileUpload = null;
+            }
+            hideUploadProgress();
+            showNotification('Загрузка отменена', 'info');
         }
         
         // ===== ИНДИКАТОР ПЕЧАТКИ =====
@@ -3212,7 +3734,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
-        // ===== АУДИОЗВОНКИ =====
+        // ===== АУДИО/ВИДЕО ЗВОНКИ =====
         const peerConnectionConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -3227,6 +3749,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
         };
         
         async function startAudioCall() {
+            await startCall(false);
+        }
+        
+        async function startVideoCall() {
+            await startCall(true);
+        }
+        
+        async function startCall(isVideo) {
             if (!currentChatId) {
                 showNotification('Выберите чат для звонка', 'warning');
                 return;
@@ -3239,9 +3769,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     return;
                 }
                 
-                console.log('Начинаем звонок пользователю ID:', otherUserId);
+                console.log('Начинаем ' + (isVideo ? 'видео' : 'аудио') + ' звонок пользователю ID:', otherUserId);
                 
-                localStream = await navigator.mediaDevices.getUserMedia({
+                isVideoCall = isVideo;
+                
+                const mediaConstraints = {
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
@@ -3249,8 +3781,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         sampleRate: 48000,
                         channelCount: 1
                     },
-                    video: false
-                });
+                    video: isVideo ? {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    } : false
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
                 
                 console.log('Локальный поток получен');
                 
@@ -3270,7 +3808,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     remoteStream.addTrack(event.track);
                     
-                    playRemoteAudio();
+                    if (event.track.kind === 'audio') {
+                        playRemoteAudio();
+                    } else if (event.track.kind === 'video') {
+                        playRemoteVideo();
+                    }
                     
                     console.log('Удаленный поток обработан');
                 };
@@ -3310,7 +3852,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 
                 const offerOptions = {
                     offerToReceiveAudio: true,
-                    offerToReceiveVideo: false,
+                    offerToReceiveVideo: isVideo,
                     voiceActivityDetection: true
                 };
                 
@@ -3326,7 +3868,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     callerId: currentUser.id,
                     callerName: currentUser.username,
                     targetId: otherUserId,
-                    offer: offer
+                    offer: offer,
+                    isVideo: isVideo
                 };
                 
                 if (ws && ws.readyState === WebSocket.OPEN) {
@@ -3340,7 +3883,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         callerData: currentCallData
                     }));
                     
-                    showCallInterface('Исходящий звонок...', 'Исходящий звонок', 'Ожидание ответа...');
+                    const callType = isVideo ? 'Видеозвонок' : 'Аудиозвонок';
+                    showCallInterface('Исходящий звонок...', callType, 'Ожидание ответа...', isVideo);
                     
                     callTimeout = setTimeout(() => {
                         if (!isInCall) {
@@ -3399,14 +3943,23 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             }
         }
         
+        function playRemoteVideo() {
+            const remoteVideo = document.getElementById('remoteVideo');
+            if (remoteVideo && remoteStream) {
+                remoteVideo.srcObject = remoteStream;
+            }
+        }
+        
         async function handleIncomingCall(data) {
-            console.log('Входящий звонок от:', data.callerData.callerName);
+            console.log('Входящий звонок от:', data.callerData.callerName, 'Тип:', data.callerData.isVideo ? 'Видео' : 'Аудио');
             
             currentCallData = data.callerData;
             currentCallData.offer = data.offer;
+            isVideoCall = data.callerData.isVideo;
             
             document.getElementById('incomingCallName').textContent = data.callerData.callerName;
             document.getElementById('incomingCallAvatar').textContent = data.callerData.callerName.charAt(0);
+            document.getElementById('incomingCallType').textContent = data.callerData.isVideo ? 'Видеозвонок' : 'Аудиозвонок';
             document.getElementById('incomingCallNotification').classList.add('show');
             
             playRingtone();
@@ -3464,7 +4017,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             document.getElementById('incomingCallNotification').classList.remove('show');
             
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({
+                const mediaConstraints = {
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
@@ -3472,8 +4025,14 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                         sampleRate: 48000,
                         channelCount: 1
                     },
-                    video: false
-                });
+                    video: isVideoCall ? {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    } : false
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
                 
                 console.log('Локальный поток получен для ответа');
                 
@@ -3492,7 +4051,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     remoteStream.addTrack(event.track);
                     
-                    playRemoteAudio();
+                    if (event.track.kind === 'audio') {
+                        playRemoteAudio();
+                    } else if (event.track.kind === 'video') {
+                        playRemoteVideo();
+                    }
                 };
                 
                 peerConnection.onicecandidate = (event) => {
@@ -3542,10 +4105,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                     
                     isCaller = false;
                     isInCall = true;
-                    showCallInterface('Входящий звонок...', 'Аудиозвонок', 'Соединение...');
+                    
+                    const callType = isVideoCall ? 'Видеозвонок' : 'Аудиозвонок';
+                    showCallInterface('Входящий звонок...', callType, 'Соединение...', isVideoCall);
                     
                     document.getElementById('callerAvatar').textContent = currentCallData.callerName.charAt(0);
-                    document.getElementById('callTitle').textContent = 'Звонок с ' + currentCallData.callerName;
+                    document.getElementById('callTitle').textContent = callType + ' с ' + currentCallData.callerName;
                     
                     if (iceCandidatesQueue.length > 0) {
                         console.log('Обработка накопленных ICE кандидатов:', iceCandidatesQueue.length);
@@ -3687,11 +4252,27 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             return null;
         }
         
-        function showCallInterface(status, title, subtitle) {
+        function showCallInterface(status, title, subtitle, isVideo) {
             isInCall = true;
             document.getElementById('callOverlay').classList.add('active');
             if (title) document.getElementById('callTitle').textContent = title;
             if (subtitle) document.getElementById('callStatus').textContent = subtitle;
+            
+            // Показываем/скрываем видео контейнер
+            if (isVideo) {
+                document.getElementById('callVideoContainer').style.display = 'flex';
+                document.getElementById('callAudioContainer').style.display = 'none';
+                
+                // Устанавливаем локальное видео
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo && localStream) {
+                    localVideo.srcObject = localStream;
+                }
+            } else {
+                document.getElementById('callVideoContainer').style.display = 'none';
+                document.getElementById('callAudioContainer').style.display = 'block';
+            }
+            
             updateCallControls();
         }
         
@@ -3713,8 +4294,15 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             } else if (isInCall) {
                 html = '<button class="call-control-btn mute ' + (muteAudio ? 'active' : '') + '" onclick="toggleMute()">' +
                        '<i class="fas fa-microphone' + (muteAudio ? '-slash' : '') + '"></i>' +
-                       '</button>' +
-                       '<button class="call-control-btn end" onclick="endCall()">' +
+                       '</button>';
+                
+                if (isVideoCall) {
+                    html += '<button class="call-control-btn video ' + (muteVideo ? 'active' : '') + '" onclick="toggleVideo()">' +
+                           '<i class="fas fa-video' + (muteVideo ? '-slash' : '') + '"></i>' +
+                           '</button>';
+                }
+                
+                html += '<button class="call-control-btn end" onclick="endCall()">' +
                        '<i class="fas fa-phone-slash"></i>' +
                        '</button>';
             }
@@ -3734,6 +4322,18 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             showNotification(muteAudio ? 'Микрофон выключен' : 'Микрофон включен', 'info');
         }
         
+        function toggleVideo() {
+            if (!localStream) return;
+            
+            muteVideo = !muteVideo;
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !muteVideo;
+            });
+            
+            updateCallControls();
+            showNotification(muteVideo ? 'Камера выключена' : 'Камера включена', 'info');
+        }
+        
         function startCallTimer() {
             callStartTime = Date.now();
             updateCallTimer();
@@ -3749,11 +4349,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             
             document.getElementById('callTimer').textContent = minutes + ':' + seconds;
             
-            const bars = document.querySelectorAll('.audio-bar');
-            bars.forEach((bar, index) => {
-                const height = muteAudio ? 10 : Math.random() * 30 + 10;
-                bar.style.height = height + 'px';
-            });
+            if (!isVideoCall) {
+                const bars = document.querySelectorAll('.audio-bar');
+                bars.forEach((bar, index) => {
+                    const height = muteAudio ? 10 : Math.random() * 30 + 10;
+                    bar.style.height = height + 'px';
+                });
+            }
         }
         
         function hideCallInterface() {
@@ -3794,6 +4396,11 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
                 remoteAudioElement = null;
             }
             
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            if (localVideo) localVideo.srcObject = null;
+            if (remoteVideo) remoteVideo.srcObject = null;
+            
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
@@ -3809,6 +4416,7 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             isCaller = false;
             currentCallData = null;
             muteAudio = false;
+            muteVideo = false;
             iceCandidatesQueue = [];
         }
         
@@ -3900,11 +4508,6 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
             return 'fas fa-file';
         }
         
-        function toggleAttachmentMenu(deviceType) {
-            // Простая реализация - можно расширить
-            showNotification('Функция прикрепления файлов в разработке', 'info');
-        }
-        
         function showChatInfo() {
             showNotification('Информация о чате в разработке', 'info');
         }
@@ -3981,6 +4584,8 @@ const server = http.createServer((req, res) => {
         handleUploadAudio(req, res);
     } else if (req.url === '/api/upload-file' && req.method === 'POST') {
         handleUploadFile(req, res);
+    } else if (req.url === '/api/upload-video' && req.method === 'POST') {
+        handleUploadVideo(req, res);
     } else if (req.url.startsWith('/uploads/') && req.method === 'GET') {
         serveFile(req, res);
     } else if (req.url.startsWith('/api/chat/') && req.url.includes('/other-user') && req.method === 'GET') {
@@ -4170,6 +4775,177 @@ function handleUploadAudio(req, res) {
     }
 }
 
+// Функция для обработки загрузки видео файлов
+function handleUploadVideo(req, res) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'No token provided' }));
+        return;
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const userId = decoded.userId;
+        
+        let body = [];
+        req.on('data', chunk => {
+            body.push(chunk);
+        });
+        
+        req.on('end', () => {
+            const data = Buffer.concat(body);
+            
+            // Парсим multipart/form-data
+            const boundary = req.headers['content-type'].split('boundary=')[1];
+            const parts = data.toString('binary').split('--' + boundary);
+            
+            let chatId, duration;
+            let videoData = null;
+            let videoFilename = null;
+            let videoType = 'video/mp4';
+            
+            for (const part of parts) {
+                if (part.includes('Content-Disposition: form-data')) {
+                    const nameMatch = part.match(/name="([^"]+)"/);
+                    if (nameMatch) {
+                        const name = nameMatch[1];
+                        
+                        if (name === 'video') {
+                            const filenameMatch = part.match(/filename="([^"]+)"/);
+                            if (filenameMatch) {
+                                videoFilename = filenameMatch[1];
+                            }
+                            
+                            const contentTypeMatch = part.match(/Content-Type: ([^\r\n]+)/);
+                            if (contentTypeMatch) {
+                                videoType = contentTypeMatch[1];
+                            }
+                            
+                            // Извлекаем видео данные
+                            const contentStart = part.indexOf('\r\n\r\n') + 4;
+                            const contentEnd = part.lastIndexOf('\r\n');
+                            const content = part.substring(contentStart, contentEnd);
+                            videoData = Buffer.from(content, 'binary');
+                        } else if (name === 'chatId') {
+                            const valueMatch = part.match(/\r\n\r\n([^\r\n]+)/);
+                            if (valueMatch) {
+                                chatId = parseInt(valueMatch[1]);
+                            }
+                        } else if (name === 'duration') {
+                            const valueMatch = part.match(/\r\n\r\n([^\r\n]+)/);
+                            if (valueMatch) {
+                                duration = parseInt(valueMatch[1]);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (!chatId || !videoData) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing required fields' }));
+                return;
+            }
+            
+            // Проверяем доступ к чату
+            db.get(
+                'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
+                [chatId, userId],
+                (err, hasAccess) => {
+                    if (err || !hasAccess) {
+                        res.writeHead(403, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Access denied' }));
+                        return;
+                    }
+                    
+                    // Генерируем уникальное имя файла
+                    const timestamp = Date.now();
+                    const random = Math.random().toString(36).substring(2, 15);
+                    const extension = videoType.includes('mp4') ? 'mp4' : 
+                                    videoType.includes('webm') ? 'webm' : 'mp4';
+                    const filename = 'video_' + userId + '_' + timestamp + '_' + random + '.' + extension;
+                    const filepath = path.join(VIDEOS_DIR, filename);
+                    const videoUrl = '/uploads/videos/' + filename;
+                    
+                    // Сохраняем файл
+                    fs.writeFile(filepath, videoData, (err) => {
+                        if (err) {
+                            console.error('Error saving video file:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Error saving video file' }));
+                            return;
+                        }
+                        
+                        // Сохраняем сообщение в базу данных
+                        db.run(
+                            'INSERT INTO messages (chat_id, user_id, video_url, message_type, duration) VALUES (?, ?, ?, ?, ?)',
+                            [chatId, userId, videoUrl, 'video', duration || 0],
+                            function(err) {
+                                if (err) {
+                                    console.error('Error saving video message:', err);
+                                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ error: 'Error saving video message' }));
+                                    return;
+                                }
+                                
+                                // Получаем сохраненное сообщение
+                                db.get(
+                                    'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
+                                    [this.lastID],
+                                    (err, savedMessage) => {
+                                        if (err) {
+                                            console.error('Error fetching saved message:', err);
+                                            return;
+                                        }
+                                        
+                                        // Получаем участников чата
+                                        db.all(
+                                            'SELECT user_id FROM chat_members WHERE chat_id = ?',
+                                            [chatId],
+                                            (err, members) => {
+                                                if (err) {
+                                                    console.error('Error fetching chat members:', err);
+                                                    return;
+                                                }
+                                                
+                                                // Отправляем сообщение всем участникам через WebSocket
+                                                members.forEach(member => {
+                                                    const clientWs = clients.get(member.user_id);
+                                                    if (clientWs && clientWs.readyState === WebSocket.OPEN) {
+                                                        clientWs.send(JSON.stringify({
+                                                            type: 'new_message',
+                                                            message: savedMessage
+                                                        }));
+                                                    }
+                                                });
+                                                
+                                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                                res.end(JSON.stringify({ 
+                                                    success: true, 
+                                                    message: 'Видео сообщение отправлено'
+                                                }));
+                                            }
+                                        );
+                                    }
+                                );
+                            }
+                        );
+                    });
+                }
+            );
+        });
+        
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid token' }));
+    }
+}
+
 // Функция для обработки загрузки файлов
 function handleUploadFile(req, res) {
     const authHeader = req.headers.authorization;
@@ -4252,12 +5028,27 @@ function handleUploadFile(req, res) {
                         return;
                     }
                     
-                    // Проверяем размер файла (максимум 50MB)
+                    // Проверяем размер файла (максимум 100MB)
                     const fileSize = fileData.length;
-                    if (fileSize > 50 * 1024 * 1024) {
+                    if (fileSize > 100 * 1024 * 1024) {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'File size exceeds 50MB limit' }));
+                        res.end(JSON.stringify({ error: 'File size exceeds 100MB limit' }));
                         return;
+                    }
+                    
+                    // Определяем тип файла
+                    const fileTypeFromName = fileName.toLowerCase();
+                    let messageType = 'file';
+                    let targetDir = FILES_DIR;
+                    
+                    if (fileTypeFromName.includes('.mp4') || fileTypeFromName.includes('.webm') || 
+                        fileTypeFromName.includes('.avi') || fileTypeFromName.includes('.mov')) {
+                        messageType = 'video';
+                        targetDir = VIDEOS_DIR;
+                    } else if (fileTypeFromName.includes('.mp3') || fileTypeFromName.includes('.wav') ||
+                              fileTypeFromName.includes('.ogg') || fileTypeFromName.includes('.webm')) {
+                        messageType = 'voice';
+                        targetDir = AUDIO_DIR;
                     }
                     
                     // Генерируем уникальное имя файла
@@ -4265,8 +5056,9 @@ function handleUploadFile(req, res) {
                     const random = Math.random().toString(36).substring(2, 15);
                     const safeFileName = fileName.replace(/[^a-zA-Z0-9.]/g, '_');
                     const filename = 'file_' + userId + '_' + timestamp + '_' + random + '_' + safeFileName;
-                    const filepath = path.join(FILES_DIR, filename);
-                    const fileUrl = '/uploads/files/' + filename;
+                    const filepath = path.join(targetDir, filename);
+                    const fileUrl = '/uploads/' + (messageType === 'video' ? 'videos' : 
+                                                messageType === 'voice' ? 'audio' : 'files') + '/' + filename;
                     
                     // Сохраняем файл
                     fs.writeFile(filepath, fileData, (err) => {
@@ -4278,9 +5070,21 @@ function handleUploadFile(req, res) {
                         }
                         
                         // Сохраняем сообщение в базу данных
+                        let sql, params;
+                        if (messageType === 'video') {
+                            sql = 'INSERT INTO messages (chat_id, user_id, video_url, file_name, file_size, file_type, message_type) VALUES (?, ?, ?, ?, ?, ?, ?)';
+                            params = [chatId, userId, fileUrl, fileName, fileSize, fileType, 'video'];
+                        } else if (messageType === 'voice') {
+                            sql = 'INSERT INTO messages (chat_id, user_id, audio_url, file_name, file_size, file_type, message_type) VALUES (?, ?, ?, ?, ?, ?, ?)';
+                            params = [chatId, userId, fileUrl, fileName, fileSize, fileType, 'voice'];
+                        } else {
+                            sql = 'INSERT INTO messages (chat_id, user_id, file_url, file_name, file_size, file_type, message_type) VALUES (?, ?, ?, ?, ?, ?, ?)';
+                            params = [chatId, userId, fileUrl, fileName, fileSize, fileType, 'file'];
+                        }
+                        
                         db.run(
-                            'INSERT INTO messages (chat_id, user_id, file_url, file_name, file_size, file_type, message_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                            [chatId, userId, fileUrl, fileName, fileSize, fileType, 'file'],
+                            sql,
+                            params,
                             function(err) {
                                 if (err) {
                                     console.error('Error saving file message:', err);
@@ -4368,7 +5172,7 @@ function serveFile(req, res) {
             '.jpeg': 'image/jpeg',
             '.gif': 'image/gif',
             '.svg': 'image/svg+xml',
-            '.webm': 'audio/webm',
+            '.webm': 'video/webm',
             '.mp3': 'audio/mpeg',
             '.mp4': 'video/mp4',
             '.pdf': 'application/pdf',
@@ -4803,6 +5607,7 @@ async function handleGetChats(req, res) {
         '(SELECT content FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message, ' +
         '(SELECT message_type FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_type, ' +
         '(SELECT file_name FROM messages WHERE chat_id = c.id AND message_type = "file" ORDER BY created_at DESC LIMIT 1) as file_name, ' +
+        '(SELECT video_url FROM messages WHERE chat_id = c.id AND message_type = "video" ORDER BY created_at DESC LIMIT 1) as video_url, ' +
         '(SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time, ' +
         '(SELECT u.username FROM chat_members cm2 ' +
         'JOIN users u ON cm2.user_id = u.id WHERE cm2.chat_id = c.id AND cm2.user_id != ? LIMIT 1) as other_user_name ' +
@@ -5194,7 +5999,7 @@ wss.on('connection', (ws, req) => {
                     // Отправляем предложение о звонке целевым пользователям
                     const { chatId, targetId, offer, callerData } = message;
                     
-                    console.log('call_offer от', ws.userId, 'для', targetId, 'чат', chatId);
+                    console.log('call_offer от', ws.userId, 'для', targetId, 'чат', chatId, 'тип:', callerData.isVideo ? 'видео' : 'аудио');
                     
                     // Проверяем, имеет ли пользователь доступ к этому чату
                     db.get(
@@ -5225,7 +6030,8 @@ wss.on('connection', (ws, req) => {
                                     targetId: ws.userId,
                                     callerId: ws.userId,
                                     callerName: ws.userInfo?.username || 'Пользователь',
-                                    offer: offer
+                                    offer: offer,
+                                    isVideo: callerData.isVideo
                                 };
                                 
                                 targetClient[1].send(JSON.stringify({
@@ -5236,7 +6042,8 @@ wss.on('connection', (ws, req) => {
                                         chatId: chatId,
                                         callerId: ws.userId,
                                         callerName: ws.userInfo?.username || 'Пользователь',
-                                        targetId: targetId
+                                        targetId: targetId,
+                                        isVideo: callerData.isVideo
                                     }
                                 }));
                                 
@@ -5428,7 +6235,7 @@ server.listen(PORT, () => {
     
     console.log('\n📱 Адаптивный интерфейс:');
     console.log('• На ПК: боковая панель + область чата справа');
-    console.log('• На мобильных: отдельный экран чата');
+    console.log('• На мобильных: отдельный экран чата с меню профиля');
     console.log('• Автоматический вход с сохранением на устройстве');
     
     console.log('\n🔐 Автоматический вход:');
@@ -5436,10 +6243,15 @@ server.listen(PORT, () => {
     console.log('• Опция "Запомнить меня на этом устройстве"');
     console.log('• Удаление сессии при выходе');
     
-    console.log('\n📞 Аудиозвонки:');
-    console.log('• Двусторонняя аудиосвязь через WebRTC');
+    console.log('\n📞 Аудио/Видео звонки:');
+    console.log('• Двусторонняя аудио/видеосвязь через WebRTC');
     console.log('• Используются STUN серверы');
     console.log('• Работает на мобильных устройствах');
+    
+    console.log('\n📎 Прикрепление файлов:');
+    console.log('• Поддержка фото, видео, документов и других файлов');
+    console.log('• Максимальный размер файла: 100MB');
+    console.log('• Индикатор загрузки и возможность отмены');
     
     console.log('\n💾 База данных:', dbPath);
     console.log('📁 Директория загрузок:', UPLOADS_DIR);
@@ -5474,5 +6286,3 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
-
-
