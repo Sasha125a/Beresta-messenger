@@ -4684,11 +4684,28 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 
 // Создаем HTTP сервер
 const server = http.createServer((req, res) => {
-    // CORS заголовки
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id');
+    // CORS заголовки для Cordova и мобильных устройств
+    const allowedOrigins = [
+        'http://localhost:8080',
+        'http://localhost:8100', // Ionic dev server
+        'http://localhost:4200', // Angular dev server
+        'capacitor://localhost',
+        'ionic://localhost',
+        'http://localhost',
+        'file://'
+    ];
     
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin) || !origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 часа
+    
+    // Предварительные запросы OPTIONS
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
