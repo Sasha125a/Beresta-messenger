@@ -184,7 +184,7 @@ const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
     
-    // OPTIONS запросы
+    // Предварительные запросы OPTIONS
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
@@ -232,14 +232,6 @@ const server = http.createServer((req, res) => {
         parseJSON(req, res, () => {
             authenticate(req, res, () => handleGetOtherUser(req, res));
         });
-    } else if (req.url === '/api/test-webrtc' && req.method === 'GET') {
-        // Тестовый endpoint для проверки WebRTC
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-            status: 'ok',
-            webrtc: 'supported',
-            timestamp: new Date().toISOString()
-        }));
     } else if (req.url === '/' || req.url === '/index.html' || req.url === '/index') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(HTML_TEMPLATE);
@@ -281,7 +273,6 @@ function handleUploadAudio(req, res) {
         req.on('end', () => {
             const data = Buffer.concat(body);
             
-            // Парсим multipart/form-data
             const boundary = req.headers['content-type'].split('boundary=')[1];
             const parts = data.toString('binary').split('--' + boundary);
             
@@ -326,7 +317,6 @@ function handleUploadAudio(req, res) {
                 return;
             }
             
-            // Проверяем доступ к чату
             db.get(
                 'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                 [chatId, userId],
@@ -337,14 +327,12 @@ function handleUploadAudio(req, res) {
                         return;
                     }
                     
-                    // Генерируем уникальное имя файла
                     const timestamp = Date.now();
                     const random = Math.random().toString(36).substring(2, 15);
                     const filename = 'voice_' + userId + '_' + timestamp + '_' + random + '.webm';
                     const filepath = path.join(AUDIO_DIR, filename);
                     const audioUrl = '/uploads/audio/' + filename;
                     
-                    // Сохраняем файл
                     fs.writeFile(filepath, audioData, (err) => {
                         if (err) {
                             console.error('Error saving audio file:', err);
@@ -353,7 +341,6 @@ function handleUploadAudio(req, res) {
                             return;
                         }
                         
-                        // Сохраняем сообщение в базу данных
                         db.run(
                             'INSERT INTO messages (chat_id, user_id, audio_url, message_type, duration) VALUES (?, ?, ?, ?, ?)',
                             [chatId, userId, audioUrl, 'voice', duration],
@@ -365,7 +352,6 @@ function handleUploadAudio(req, res) {
                                     return;
                                 }
                                 
-                                // Получаем сохраненное сообщение
                                 db.get(
                                     'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
                                     [this.lastID],
@@ -375,7 +361,6 @@ function handleUploadAudio(req, res) {
                                             return;
                                         }
                                         
-                                        // Получаем участников чата
                                         db.all(
                                             'SELECT user_id FROM chat_members WHERE chat_id = ?',
                                             [chatId],
@@ -385,7 +370,6 @@ function handleUploadAudio(req, res) {
                                                     return;
                                                 }
                                                 
-                                                // Отправляем сообщение всем участникам через WebSocket
                                                 members.forEach(member => {
                                                     const clientWs = clients.get(member.user_id);
                                                     if (clientWs && clientWs.readyState === WebSocket.OPEN) {
@@ -493,7 +477,6 @@ function handleUploadVideo(req, res) {
                 return;
             }
             
-            // Проверяем доступ к чату
             db.get(
                 'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                 [chatId, userId],
@@ -504,7 +487,6 @@ function handleUploadVideo(req, res) {
                         return;
                     }
                     
-                    // Генерируем уникальное имя файла
                     const timestamp = Date.now();
                     const random = Math.random().toString(36).substring(2, 15);
                     const extension = videoType.includes('mp4') ? 'mp4' : 
@@ -513,7 +495,6 @@ function handleUploadVideo(req, res) {
                     const filepath = path.join(VIDEOS_DIR, filename);
                     const videoUrl = '/uploads/videos/' + filename;
                     
-                    // Сохраняем файл
                     fs.writeFile(filepath, videoData, (err) => {
                         if (err) {
                             console.error('Error saving video file:', err);
@@ -522,7 +503,6 @@ function handleUploadVideo(req, res) {
                             return;
                         }
                         
-                        // Сохраняем сообщение в базу данных
                         db.run(
                             'INSERT INTO messages (chat_id, user_id, video_url, message_type, duration) VALUES (?, ?, ?, ?, ?)',
                             [chatId, userId, videoUrl, 'video', duration || 0],
@@ -534,7 +514,6 @@ function handleUploadVideo(req, res) {
                                     return;
                                 }
                                 
-                                // Получаем сохраненное сообщение
                                 db.get(
                                     'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
                                     [this.lastID],
@@ -544,7 +523,6 @@ function handleUploadVideo(req, res) {
                                             return;
                                         }
                                         
-                                        // Получаем участников чата
                                         db.all(
                                             'SELECT user_id FROM chat_members WHERE chat_id = ?',
                                             [chatId],
@@ -554,7 +532,6 @@ function handleUploadVideo(req, res) {
                                                     return;
                                                 }
                                                 
-                                                // Отправляем сообщение всем участникам через WebSocket
                                                 members.forEach(member => {
                                                     const clientWs = clients.get(member.user_id);
                                                     if (clientWs && clientWs.readyState === WebSocket.OPEN) {
@@ -657,7 +634,6 @@ function handleUploadFile(req, res) {
                 return;
             }
             
-            // Проверяем доступ к чату
             db.get(
                 'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                 [chatId, userId],
@@ -697,7 +673,6 @@ function handleUploadFile(req, res) {
                     const fileUrl = '/uploads/' + (messageType === 'video' ? 'videos' : 
                                                 messageType === 'voice' ? 'audio' : 'files') + '/' + filename;
                     
-                    // Сохраняем файл
                     fs.writeFile(filepath, fileData, (err) => {
                         if (err) {
                             console.error('Error saving file:', err);
@@ -706,7 +681,6 @@ function handleUploadFile(req, res) {
                             return;
                         }
                         
-                        // Сохраняем сообщение в базу данных
                         let sql, params;
                         if (messageType === 'video') {
                             sql = 'INSERT INTO messages (chat_id, user_id, video_url, file_name, file_size, file_type, message_type) VALUES (?, ?, ?, ?, ?, ?, ?)';
@@ -730,7 +704,6 @@ function handleUploadFile(req, res) {
                                     return;
                                 }
                                 
-                                // Получаем сохраненное сообщение
                                 db.get(
                                     'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
                                     [this.lastID],
@@ -740,7 +713,6 @@ function handleUploadFile(req, res) {
                                             return;
                                         }
                                         
-                                        // Получаем участников чата
                                         db.all(
                                             'SELECT user_id FROM chat_members WHERE chat_id = ?',
                                             [chatId],
@@ -750,7 +722,6 @@ function handleUploadFile(req, res) {
                                                     return;
                                                 }
                                                 
-                                                // Отправляем сообщение всем участникам через WebSocket
                                                 members.forEach(member => {
                                                     const clientWs = clients.get(member.user_id);
                                                     if (clientWs && clientWs.readyState === WebSocket.OPEN) {
@@ -893,8 +864,6 @@ async function handleRegister(req, res) {
                             (err) => {
                                 if (err) {
                                     console.error('Error saving session:', err);
-                                } else {
-                                    console.log('Session saved for device:', deviceId);
                                 }
                             }
                         );
@@ -948,8 +917,6 @@ async function handleLogin(req, res) {
                     (err) => {
                         if (err) {
                             console.error('Error saving session:', err);
-                        } else {
-                            console.log('Session saved for device:', deviceId);
                         }
                     }
                 );
@@ -981,7 +948,6 @@ async function handleValidateToken(req, res) {
     
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('Токен расшифрован, userId:', decoded.userId);
         
         if (deviceId) {
             db.get(
@@ -994,8 +960,6 @@ async function handleValidateToken(req, res) {
                         res.end(JSON.stringify({ valid: false, error: 'Database error' }));
                         return;
                     }
-                    
-                    console.log('Сессия найдена:', session);
                     
                     if (!session || session.token !== token) {
                         console.log('Сессия недействительна или истекла');
@@ -1064,8 +1028,6 @@ async function handleLogout(req, res) {
                 (err) => {
                     if (err) {
                         console.error('Error deleting session:', err);
-                    } else {
-                        console.log('Session deleted for device:', deviceId);
                     }
                 }
             );
@@ -1433,20 +1395,23 @@ const wss = new WebSocket.Server({ server });
 // Хранение подключенных пользователей
 const clients = new Map();
 
+// Хранение активных звонков
+const activeCalls = new Map();
+
 wss.on('connection', (ws, req) => {
     ws.isAuthenticated = false;
     ws.userId = null;
     ws.userInfo = null;
     ws.deviceId = null;
-    ws.callData = null;
-    ws.callAnswer = null;
+    ws.currentCallId = null;
+    ws.callType = null;
     
     console.log('Новое WebSocket подключение');
     
     ws.on('message', async (data) => {
         try {
             const message = JSON.parse(data.toString());
-            console.log('WebSocket сообщение от клиента:', message.type, 'пользователь ID:', ws.userId);
+            console.log('WebSocket сообщение:', message.type, 'пользователь ID:', ws.userId);
             
             if (message.type === 'authenticate') {
                 try {
@@ -1466,7 +1431,7 @@ wss.on('connection', (ws, req) => {
                         clients.delete(user.id);
                         clients.set(user.id, ws);
                         
-                        console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id + ' Устройство: ' + message.deviceId);
+                        console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id);
                         
                         ws.send(JSON.stringify({
                             type: 'authenticated',
@@ -1478,261 +1443,38 @@ wss.on('connection', (ws, req) => {
                     ws.send(JSON.stringify({ type: 'auth_error', message: 'Invalid token' }));
                 }
             } else if (ws.isAuthenticated) {
-                if (message.type === 'message' && message.content) {
-                    const { chatId, content } = message;
-                    
-                    db.get(
-                        'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
-                        [chatId, ws.userId],
-                        (err, hasAccess) => {
-                            if (err || !hasAccess) {
-                                ws.send(JSON.stringify({ 
-                                    type: 'error', 
-                                    message: 'Нет доступа к чату' 
-                                }));
-                                return;
-                            }
-                            
-                            db.run(
-                                'INSERT INTO messages (chat_id, user_id, content, message_type) VALUES (?, ?, ?, ?)',
-                                [chatId, ws.userId, content, 'text'],
-                                function(err) {
-                                    if (err) {
-                                        console.error('Error saving message:', err);
-                                        ws.send(JSON.stringify({ 
-                                            type: 'error', 
-                                            message: 'Ошибка сохранения сообщения' 
-                                        }));
-                                        return;
-                                    }
-                                    
-                                    db.get(
-                                        'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
-                                        [this.lastID],
-                                        (err, savedMessage) => {
-                                            if (err) {
-                                                console.error('Error fetching saved message:', err);
-                                                return;
-                                            }
-                                            
-                                            db.all(
-                                                'SELECT user_id FROM chat_members WHERE chat_id = ?',
-                                                [chatId],
-                                                (err, members) => {
-                                                    if (err) {
-                                                        console.error('Error fetching chat members:', err);
-                                                        return;
-                                                    }
-                                                    
-                                                    members.forEach(member => {
-                                                        const clientWs = clients.get(member.user_id);
-                                                        if (clientWs && clientWs.readyState === WebSocket.OPEN) {
-                                                            clientWs.send(JSON.stringify({
-                                                                type: 'new_message',
-                                                                message: savedMessage
-                                                            }));
-                                                        }
-                                                    });
-                                                    
-                                                    db.get(
-                                                        'SELECT COUNT(*) as count FROM messages WHERE chat_id = ?',
-                                                        [chatId],
-                                                        (err, result) => {
-                                                            if (!err && result.count === 1) {
-                                                                members.forEach(member => {
-                                                                    const clientWs = clients.get(member.user_id);
-                                                                    if (clientWs && clientWs.readyState === WebSocket.OPEN) {
-                                                                        clientWs.send(JSON.stringify({
-                                                                            type: 'chat_created',
-                                                                            chatId: chatId
-                                                                        }));
-                                                                    }
-                                                                });
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                            );
-                                        }
-                                    );
-                                }
-                            );
-                        }
-                    );
-                } else if (message.type === 'typing') {
-                    const { chatId, userId, username } = message;
-                    
-                    db.get(
-                        'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
-                        [chatId, ws.userId],
-                        (err, hasAccess) => {
-                            if (err || !hasAccess) return;
-                            
-                            db.all(
-                                'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?',
-                                [chatId, userId],
-                                (err, members) => {
-                                    if (err) return;
-                                    
-                                    members.forEach(member => {
-                                        const clientWs = clients.get(member.user_id);
-                                        if (clientWs && clientWs.readyState === WebSocket.OPEN) {
-                                            clientWs.send(JSON.stringify({
-                                                type: 'typing',
-                                                chatId: chatId,
-                                                userId: userId,
-                                                username: username
-                                            }));
-                                        }
-                                    });
-                                }
-                            );
-                        }
-                    );
-                } else if (message.type === 'call_offer') {
-                    const { chatId, targetId, offer, callerData } = message;
-                    
-                    console.log('call_offer от', ws.userId, 'для', targetId, 'чат', chatId, 'тип:', callerData.isVideo ? 'видео' : 'аудио');
-                    
-                    db.get(
-                        'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
-                        [chatId, ws.userId],
-                        (err, hasAccess) => {
-                            if (err || !hasAccess) {
-                                console.log('Нет доступа к чату');
-                                ws.send(JSON.stringify({
-                                    type: 'call_error',
-                                    chatId: chatId,
-                                    error: 'Нет доступа к чату'
-                                }));
-                                return;
-                            }
-                            
-                            const targetClient = Array.from(clients.entries()).find(([id, client]) => 
-                                client.userId === targetId && client.readyState === WebSocket.OPEN
-                            );
-                            
-                            if (targetClient && targetClient[1]) {
-                                console.log('Отправка call_offer пользователю', targetId);
-                                
-                                targetClient[1].callData = {
-                                    chatId,
-                                    targetId: ws.userId,
-                                    callerId: ws.userId,
-                                    callerName: ws.userInfo?.username || 'Пользователь',
-                                    offer: offer,
-                                    isVideo: callerData.isVideo
-                                };
-                                
-                                targetClient[1].send(JSON.stringify({
-                                    type: 'call_offer',
-                                    chatId: chatId,
-                                    offer: offer,
-                                    callerData: {
-                                        chatId: chatId,
-                                        callerId: ws.userId,
-                                        callerName: ws.userInfo?.username || 'Пользователь',
-                                        targetId: targetId,
-                                        isVideo: callerData.isVideo
-                                    }
-                                }));
-                                
-                                ws.send(JSON.stringify({
-                                    type: 'call_offer_sent',
-                                    chatId: chatId,
-                                    targetId: targetId
-                                }));
-                            } else {
-                                console.log('Пользователь', targetId, 'не в сети');
-                                ws.send(JSON.stringify({
-                                    type: 'call_error',
-                                    chatId: chatId,
-                                    error: 'Пользователь не в сети'
-                                }));
-                            }
-                        }
-                    );
-                    
-                } else if (message.type === 'call_answer') {
-                    const { chatId, targetId, answer } = message;
-                    
-                    console.log('call_answer от', ws.userId, 'для', targetId);
-                    
-                    const callerClient = Array.from(clients.entries()).find(([id, client]) => 
-                        client.userId === targetId && client.readyState === WebSocket.OPEN
-                    );
-                    
-                    if (callerClient && callerClient[1]) {
-                        console.log('Отправка call_answer пользователю', targetId);
+                switch (message.type) {
+                    case 'message':
+                        handleTextMessage(ws, message);
+                        break;
                         
-                        callerClient[1].callAnswer = answer;
+                    case 'typing':
+                        handleTyping(ws, message);
+                        break;
                         
-                        callerClient[1].send(JSON.stringify({
-                            type: 'call_answer',
-                            chatId: chatId,
-                            answer: answer,
-                            targetId: ws.userId
-                        }));
-                    } else {
-                        console.log('Вызывающий пользователь', targetId, 'не найден');
-                    }
-                    
-                } else if (message.type === 'call_ice_candidate') {
-                    const { chatId, targetId, candidate } = message;
-                    
-                    console.log('call_ice_candidate от', ws.userId, 'для', targetId);
-                    
-                    const targetClient = Array.from(clients.entries()).find(([id, client]) => 
-                        client.userId === targetId && client.readyState === WebSocket.OPEN
-                    );
-                    
-                    if (targetClient && targetClient[1]) {
-                        targetClient[1].send(JSON.stringify({
-                            type: 'call_ice_candidate',
-                            chatId: chatId,
-                            candidate: candidate,
-                            senderId: ws.userId
-                        }));
-                    }
-                    
-                } else if (message.type === 'call_end') {
-                    const { chatId, targetId, reason } = message;
-                    
-                    console.log('call_end от', ws.userId, 'для', targetId, 'причина:', reason);
-                    
-                    const targetClient = Array.from(clients.entries()).find(([id, client]) => 
-                        client.userId === targetId && client.readyState === WebSocket.OPEN
-                    );
-                    
-                    if (targetClient && targetClient[1]) {
-                        targetClient[1].send(JSON.stringify({
-                            type: 'call_end',
-                            chatId: chatId,
-                            reason: reason,
-                            senderId: ws.userId
-                        }));
+                    case 'start_call':
+                        handleStartCall(ws, message);
+                        break;
                         
-                        ws.callData = null;
-                        targetClient[1].callData = null;
-                    }
-                    
-                } else if (message.type === 'call_error') {
-                    const { chatId, targetId, error } = message;
-                    
-                    console.log('call_error от', ws.userId, 'для', targetId, 'ошибка:', error);
-                    
-                    const targetClient = Array.from(clients.entries()).find(([id, client]) => 
-                        client.userId === targetId && client.readyState === WebSocket.OPEN
-                    );
-                    
-                    if (targetClient && targetClient[1]) {
-                        targetClient[1].send(JSON.stringify({
-                            type: 'call_error',
-                            chatId: chatId,
-                            error: error,
-                            senderId: ws.userId
-                        }));
-                    }
+                    case 'accept_call':
+                        handleAcceptCall(ws, message);
+                        break;
+                        
+                    case 'reject_call':
+                        handleRejectCall(ws, message);
+                        break;
+                        
+                    case 'end_call':
+                        handleEndCall(ws, message);
+                        break;
+                        
+                    case 'call_audio':
+                        handleCallAudio(ws, message);
+                        break;
+                        
+                    case 'call_video':
+                        handleCallVideo(ws, message);
+                        break;
                 }
             }
         } catch (error) {
@@ -1742,25 +1484,11 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
         if (ws.isAuthenticated && ws.userId) {
-            console.log('Отключение пользователя ID: ' + ws.userId + ' с устройства: ' + ws.deviceId);
+            console.log('Отключение пользователя ID: ' + ws.userId);
             
-            if (ws.callData) {
-                const { chatId, targetId } = ws.callData;
-                
-                const targetClient = Array.from(clients.entries()).find(([id, client]) => 
-                    client.userId === targetId && client.readyState === WebSocket.OPEN
-                );
-                
-                if (targetClient && targetClient[1]) {
-                    targetClient[1].send(JSON.stringify({
-                        type: 'call_end',
-                        chatId: chatId,
-                        reason: 'user_disconnected',
-                        senderId: ws.userId
-                    }));
-                    
-                    targetClient[1].callData = null;
-                }
+            // Завершаем активный звонок при отключении
+            if (ws.currentCallId) {
+                handleUserDisconnected(ws.currentCallId, ws.userId);
             }
             
             clients.delete(ws.userId);
@@ -1772,7 +1500,335 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-// САМО-ПИНГ ДЛЯ RENDER.COM
+// Обработчики сообщений
+function handleTextMessage(ws, message) {
+    const { chatId, content } = message;
+    
+    if (!chatId || !content) return;
+    
+    db.get('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?', 
+        [chatId, ws.userId], 
+        (err, hasAccess) => {
+            if (err || !hasAccess) {
+                ws.send(JSON.stringify({ 
+                    type: 'error', 
+                    message: 'Нет доступа к чату' 
+                }));
+                return;
+            }
+            
+            db.run('INSERT INTO messages (chat_id, user_id, content, message_type) VALUES (?, ?, ?, ?)',
+                [chatId, ws.userId, content, 'text'],
+                function(err) {
+                    if (err) {
+                        console.error('Error saving message:', err);
+                        return;
+                    }
+                    
+                    db.get('SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
+                        [this.lastID],
+                        (err, savedMessage) => {
+                            if (err) return;
+                            
+                            db.all('SELECT user_id FROM chat_members WHERE chat_id = ?', 
+                                [chatId],
+                                (err, members) => {
+                                    if (err) return;
+                                    
+                                    members.forEach(member => {
+                                        const clientWs = clients.get(member.user_id);
+                                        if (clientWs && clientWs.readyState === WebSocket.OPEN) {
+                                            clientWs.send(JSON.stringify({
+                                                type: 'new_message',
+                                                message: savedMessage
+                                            }));
+                                        }
+                                    });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
+}
+
+function handleTyping(ws, message) {
+    const { chatId } = message;
+    
+    db.get('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?', 
+        [chatId, ws.userId], 
+        (err, hasAccess) => {
+            if (err || !hasAccess) return;
+            
+            db.all('SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?',
+                [chatId, ws.userId],
+                (err, members) => {
+                    if (err) return;
+                    
+                    members.forEach(member => {
+                        const clientWs = clients.get(member.user_id);
+                        if (clientWs && clientWs.readyState === WebSocket.OPEN) {
+                            clientWs.send(JSON.stringify({
+                                type: 'typing',
+                                chatId: chatId,
+                                userId: ws.userId,
+                                username: ws.userInfo?.username
+                            }));
+                        }
+                    });
+                }
+            );
+        }
+    );
+}
+
+// Обработчики звонков
+function handleStartCall(ws, message) {
+    const { chatId, callType, receiverId } = message;
+    
+    if (!chatId || !receiverId) {
+        ws.send(JSON.stringify({ type: 'call_error', error: 'Missing parameters' }));
+        return;
+    }
+    
+    // Генерируем уникальный ID звонка
+    const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // Сохраняем информацию о звонке
+    const callData = {
+        callId: callId,
+        chatId: chatId,
+        callerId: ws.userId,
+        callerName: ws.userInfo?.username || 'Пользователь',
+        receiverId: receiverId,
+        callType: callType || 'audio',
+        startTime: Date.now(),
+        status: 'calling'
+    };
+    
+    activeCalls.set(callId, callData);
+    
+    ws.currentCallId = callId;
+    ws.callType = callType;
+    
+    // Отправляем уведомление вызываемому
+    const receiverWs = clients.get(receiverId);
+    if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+        receiverWs.send(JSON.stringify({
+            type: 'incoming_call',
+            callId: callId,
+            callerId: ws.userId,
+            callerName: ws.userInfo?.username || 'Пользователь',
+            chatId: chatId,
+            callType: callType || 'audio'
+        }));
+        
+        console.log('Уведомление о звонке отправлено пользователю', receiverId);
+        
+        // Отправляем подтверждение вызывающему
+        ws.send(JSON.stringify({
+            type: 'call_started',
+            callId: callId,
+            status: 'calling'
+        }));
+        
+        // Таймаут ожидания ответа (30 секунд)
+        setTimeout(() => {
+            if (activeCalls.has(callId) && activeCalls.get(callId).status === 'calling') {
+                ws.send(JSON.stringify({
+                    type: 'call_ended',
+                    callId: callId,
+                    reason: 'timeout'
+                }));
+                activeCalls.delete(callId);
+                ws.currentCallId = null;
+            }
+        }, 30000);
+        
+    } else {
+        // Пользователь не в сети
+        activeCalls.delete(callId);
+        ws.send(JSON.stringify({
+            type: 'call_error',
+            error: 'Пользователь не в сети'
+        }));
+    }
+}
+
+function handleAcceptCall(ws, message) {
+    const { callId } = message;
+    
+    if (!callId || !activeCalls.has(callId)) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Проверяем, что это правильный получатель
+    if (callData.receiverId !== ws.userId) {
+        ws.send(JSON.stringify({ type: 'call_error', error: 'Invalid call' }));
+        return;
+    }
+    
+    // Обновляем статус звонка
+    callData.status = 'accepted';
+    activeCalls.set(callId, callData);
+    
+    ws.currentCallId = callId;
+    ws.callType = callData.callType;
+    
+    // Уведомляем вызывающего
+    const callerWs = clients.get(callData.callerId);
+    if (callerWs && callerWs.readyState === WebSocket.OPEN) {
+        callerWs.send(JSON.stringify({
+            type: 'call_accepted',
+            callId: callId,
+            receiverId: ws.userId,
+            receiverName: ws.userInfo?.username
+        }));
+    }
+    
+    // Уведомляем принимающего
+    ws.send(JSON.stringify({
+        type: 'call_connected',
+        callId: callId,
+        callerId: callData.callerId,
+        callType: callData.callType
+    }));
+}
+
+function handleRejectCall(ws, message) {
+    const { callId } = message;
+    
+    if (!callId || !activeCalls.has(callId)) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Уведомляем вызывающего
+    const callerWs = clients.get(callData.callerId);
+    if (callerWs && callerWs.readyState === WebSocket.OPEN) {
+        callerWs.send(JSON.stringify({
+            type: 'call_rejected',
+            callId: callId,
+            receiverId: ws.userId
+        }));
+        
+        callerWs.currentCallId = null;
+    }
+    
+    // Удаляем звонок
+    activeCalls.delete(callId);
+    ws.currentCallId = null;
+}
+
+function handleEndCall(ws, message) {
+    const { callId } = message;
+    
+    if (!callId || !activeCalls.has(callId)) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Определяем, кто завершает звонк
+    const isCaller = callData.callerId === ws.userId;
+    const otherUserId = isCaller ? callData.receiverId : callData.callerId;
+    
+    // Уведомляем другого участника
+    const otherWs = clients.get(otherUserId);
+    if (otherWs && otherWs.readyState === WebSocket.OPEN) {
+        otherWs.currentCallId = null;
+        otherWs.send(JSON.stringify({
+            type: 'call_ended',
+            callId: callId,
+            endedBy: ws.userId,
+            reason: 'ended_by_user'
+        }));
+    }
+    
+    // Удаляем звонок
+    activeCalls.delete(callId);
+    
+    // Очищаем currentCallId у обоих участников
+    ws.currentCallId = null;
+    if (otherWs) {
+        otherWs.currentCallId = null;
+    }
+}
+
+function handleCallAudio(ws, message) {
+    const { callId, audioData } = message;
+    
+    if (!callId || !activeCalls.has(callId) || !audioData) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Определяем получателя
+    const receiverId = callData.callerId === ws.userId ? callData.receiverId : callData.callerId;
+    
+    // Отправляем аудио данные получателю
+    const receiverWs = clients.get(receiverId);
+    if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+        receiverWs.send(JSON.stringify({
+            type: 'call_audio',
+            callId: callId,
+            audioData: audioData,
+            senderId: ws.userId,
+            timestamp: Date.now()
+        }));
+    }
+}
+
+function handleCallVideo(ws, message) {
+    const { callId, videoData } = message;
+    
+    if (!callId || !activeCalls.has(callId) || !videoData) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Проверяем, что это видеозвонок
+    if (callData.callType !== 'video') return;
+    
+    // Определяем получателя
+    const receiverId = callData.callerId === ws.userId ? callData.receiverId : callData.callerId;
+    
+    // Отправляем видео данные получателю
+    const receiverWs = clients.get(receiverId);
+    if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+        receiverWs.send(JSON.stringify({
+            type: 'call_video',
+            callId: callId,
+            videoData: videoData,
+            senderId: ws.userId,
+            timestamp: Date.now()
+        }));
+    }
+}
+
+function handleUserDisconnected(callId, userId) {
+    if (!callId || !activeCalls.has(callId)) return;
+    
+    const callData = activeCalls.get(callId);
+    
+    // Определяем, кто отключился
+    const isCaller = callData.callerId === userId;
+    const otherUserId = isCaller ? callData.receiverId : callData.callerId;
+    
+    // Уведомляем другого участника
+    const otherWs = clients.get(otherUserId);
+    if (otherWs && otherWs.readyState === WebSocket.OPEN) {
+        otherWs.currentCallId = null;
+        otherWs.send(JSON.stringify({
+            type: 'call_ended',
+            callId: callId,
+            endedBy: userId,
+            reason: 'disconnected'
+        }));
+    }
+    
+    // Удаляем звонок
+    activeCalls.delete(callId);
+}
+
+// ========== САМО-ПИНГ ДЛЯ RENDER.COM ==========
 function startSelfPing() {
     const selfUrl = 'https://beresta-messenger-web.onrender.com';
     
@@ -1789,6 +1845,7 @@ function startSelfPing() {
     
     pingSelf();
     setInterval(pingSelf, 5 * 60 * 1000);
+    
     console.log('🔄 Само-пинг активирован: каждые 5 минут');
 }
 
@@ -1806,6 +1863,40 @@ server.listen(PORT, () => {
     if (process.env.RENDER_EXTERNAL_HOSTNAME) {
         console.log('🌍 Внешний URL:', 'https://' + process.env.RENDER_EXTERNAL_HOSTNAME);
         console.log('🔗 WebSocket URL:', 'wss://' + process.env.RENDER_EXTERNAL_HOSTNAME);
+    }
+    
+    console.log('\n📱 Адаптивный интерфейс:');
+    console.log('• На ПК: боковая панель + область чата справа');
+    console.log('• На мобильных: отдельный экран чата с меню профиля');
+    console.log('• Автоматический вход с сохранением на устройстве');
+    
+    console.log('\n🔐 Автоматический вход:');
+    console.log('• Сохранение токена с привязкой к устройству');
+    console.log('• Опция "Запомнить меня на этом устройстве"');
+    console.log('• Удаление сессии при выходе');
+    
+    console.log('\n📞 Аудио/Видео звонки:');
+    console.log('• Упрощенная система звонков через WebSocket');
+    console.log('• Передача аудио в реальном времени');
+    console.log('• Поддержка видеозвонков');
+    console.log('• Работает на мобильных устройствах');
+    
+    console.log('\n📎 Прикрепление файлов:');
+    console.log('• Поддержка фото, видео, документов');
+    console.log('• Максимальный размер файла: 100MB');
+    
+    console.log('\n👥 Управление контактами:');
+    console.log('• Кнопка добавления контакта скрывается при открытии чата');
+    console.log('• Кнопка видна только на вкладке "Контакты"');
+    
+    console.log('\n💾 База данных:', dbPath);
+    console.log('📁 Директория загрузок:', UPLOADS_DIR);
+    
+    if (process.env.NODE_ENV === 'production') {
+        console.log('\n✅ Режим: Production');
+        console.log('✅ Поддержка HTTPS/WebSocket Secure');
+    } else {
+        console.log('\n⚙️  Режим: Development');
     }
     
     console.log('\n✅ Готово! Откройте в браузере: http://localhost:' + PORT);
