@@ -1782,7 +1782,7 @@ wss.on('connection', (ws, req) => {
                         console.log(`❌ Caller user ${targetId} not found`);
                     }
                     
-                } else if (message.type === 'call_ice_candidate') {
+                                } else if (message.type === 'call_ice_candidate') {
                     const { chatId, targetId, candidate } = message;
                     
                     console.log(`📞 call_ice_candidate from ${ws.userId} to ${targetId}`);
@@ -1839,6 +1839,43 @@ wss.on('connection', (ws, req) => {
                             type: 'call_error',
                             chatId: chatId,
                             error: error,
+                            senderId: ws.userId
+                        }));
+                    }
+                    
+                } else if (message.type === 'renegotiate') {
+                    const { chatId, targetId, offer } = message;
+                    
+                    console.log(`🔄 renegotiate from ${ws.userId} to ${targetId}`);
+                    
+                    // Находим целевого пользователя
+                    const targetClient = Array.from(clients.entries()).find(([id, client]) => 
+                        client.userId === targetId && client.readyState === WebSocket.OPEN
+                    );
+                    
+                    if (targetClient && targetClient[1]) {
+                        targetClient[1].send(JSON.stringify({
+                            type: 'renegotiate',
+                            chatId: chatId,
+                            offer: offer,
+                            senderId: ws.userId
+                        }));
+                    }
+                    
+                } else if (message.type === 'ice_complete') {
+                    const { chatId, targetId } = message;
+                    
+                    console.log(`✅ ice_complete from ${ws.userId} to ${targetId}`);
+                    
+                    // Находим целевого пользователя
+                    const targetClient = Array.from(clients.entries()).find(([id, client]) => 
+                        client.userId === targetId && client.readyState === WebSocket.OPEN
+                    );
+                    
+                    if (targetClient && targetClient[1]) {
+                        targetClient[1].send(JSON.stringify({
+                            type: 'ice_complete',
+                            chatId: chatId,
                             senderId: ws.userId
                         }));
                     }
@@ -2024,3 +2061,4 @@ process.on('SIGINT', () => {
 
 // Экспортируем для тестирования
 module.exports = { server, wss, db };
+
