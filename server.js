@@ -25,7 +25,7 @@ const VIDEOS_DIR = path.join(UPLOADS_DIR, 'videos');
     }
 });
 
-// Инициализация базы данных (используем файловую БД для сохранения данных)
+// Инициализация базы данных
 const dbPath = process.env.NODE_ENV === 'production' 
     ? '/opt/render/project/src/beresta.db'
     : path.join(__dirname, 'beresta.db');
@@ -66,7 +66,7 @@ db.serialize(() => {
         )
     `);
 
-    // Участники чатов с персональным названием чата для каждого участника
+    // Участники чатов
     db.run(`
         CREATE TABLE IF NOT EXISTS chat_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,7 +101,7 @@ db.serialize(() => {
         )
     `);
 
-    // Сессии для автоматического входа
+    // Сессии
     db.run(`
         CREATE TABLE IF NOT EXISTS user_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,16 +158,16 @@ function authenticate(req, res, next) {
     }
 }
 
-// HTML шаблон с адаптивным интерфейсом для ПК и мобильных
+// HTML шаблон
 const HTML_TEMPLATE = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
 
 // Создаем HTTP сервер
 const server = http.createServer((req, res) => {
-    // CORS заголовки для Cordova и мобильных устройств
+    // CORS заголовки
     const allowedOrigins = [
         'http://localhost:8080',
-        'http://localhost:8100', // Ionic dev server
-        'http://localhost:4200', // Angular dev server
+        'http://localhost:8100',
+        'http://localhost:4200',
         'capacitor://localhost',
         'ionic://localhost',
         'http://localhost',
@@ -182,9 +182,9 @@ const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id, X-Requested-With');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400'); // 24 часа
+    res.setHeader('Access-Control-Max-Age', '86400');
     
-    // Предварительные запросы OPTIONS
+    // OPTIONS запросы
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
@@ -232,16 +232,21 @@ const server = http.createServer((req, res) => {
         parseJSON(req, res, () => {
             authenticate(req, res, () => handleGetOtherUser(req, res));
         });
+    } else if (req.url === '/api/test-webrtc' && req.method === 'GET') {
+        // Тестовый endpoint для проверки WebRTC
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+            status: 'ok',
+            webrtc: 'supported',
+            timestamp: new Date().toISOString()
+        }));
     } else if (req.url === '/' || req.url === '/index.html' || req.url === '/index') {
-        // Отдаем HTML интерфейс
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(HTML_TEMPLATE);
     } else if (req.url === '/health' || req.url === '/ping') {
-        // Health check для Render
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
     } else {
-        // Для SPA роутинга
         if (req.method === 'GET' && !req.url.includes('.')) {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(HTML_TEMPLATE);
@@ -296,7 +301,6 @@ function handleUploadAudio(req, res) {
                                 audioFilename = filenameMatch[1];
                             }
                             
-                            // Извлекаем аудио данные
                             const contentStart = part.indexOf('\r\n\r\n') + 4;
                             const contentEnd = part.lastIndexOf('\r\n');
                             const content = part.substring(contentStart, contentEnd);
@@ -439,7 +443,6 @@ function handleUploadVideo(req, res) {
         req.on('end', () => {
             const data = Buffer.concat(body);
             
-            // Парсим multipart/form-data
             const boundary = req.headers['content-type'].split('boundary=')[1];
             const parts = data.toString('binary').split('--' + boundary);
             
@@ -465,7 +468,6 @@ function handleUploadVideo(req, res) {
                                 videoType = contentTypeMatch[1];
                             }
                             
-                            // Извлекаем видео данные
                             const contentStart = part.indexOf('\r\n\r\n') + 4;
                             const contentEnd = part.lastIndexOf('\r\n');
                             const content = part.substring(contentStart, contentEnd);
@@ -610,7 +612,6 @@ function handleUploadFile(req, res) {
         req.on('end', () => {
             const data = Buffer.concat(body);
             
-            // Парсим multipart/form-data
             const boundary = req.headers['content-type'].split('boundary=')[1];
             const parts = data.toString('binary').split('--' + boundary);
             
@@ -636,7 +637,6 @@ function handleUploadFile(req, res) {
                                 fileType = contentTypeMatch[1];
                             }
                             
-                            // Извлекаем данные файла
                             const contentStart = part.indexOf('\r\n\r\n') + 4;
                             const contentEnd = part.lastIndexOf('\r\n');
                             const content = part.substring(contentStart, contentEnd);
@@ -668,7 +668,6 @@ function handleUploadFile(req, res) {
                         return;
                     }
                     
-                    // Проверяем размер файла (максимум 100MB)
                     const fileSize = fileData.length;
                     if (fileSize > 100 * 1024 * 1024) {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -676,7 +675,6 @@ function handleUploadFile(req, res) {
                         return;
                     }
                     
-                    // Определяем тип файла
                     const fileTypeFromName = fileName.toLowerCase();
                     let messageType = 'file';
                     let targetDir = FILES_DIR;
@@ -691,7 +689,6 @@ function handleUploadFile(req, res) {
                         targetDir = AUDIO_DIR;
                     }
                     
-                    // Генерируем уникальное имя файла
                     const timestamp = Date.now();
                     const random = Math.random().toString(36).substring(2, 15);
                     const safeFileName = fileName.replace(/[^a-zA-Z0-9.]/g, '_');
@@ -792,7 +789,6 @@ function handleUploadFile(req, res) {
 function serveFile(req, res) {
     const filePath = path.join(__dirname, req.url);
     
-    // Проверяем существование файла
     fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
             res.writeHead(404);
@@ -800,7 +796,6 @@ function serveFile(req, res) {
             return;
         }
         
-        // Определяем Content-Type
         const ext = path.extname(filePath).toLowerCase();
         const mimeTypes = {
             '.html': 'text/html',
@@ -826,14 +821,12 @@ function serveFile(req, res) {
         
         const contentType = mimeTypes[ext] || 'application/octet-stream';
         
-        // Устанавливаем заголовки
         res.writeHead(200, {
             'Content-Type': contentType,
             'Content-Length': stats.size,
             'Cache-Control': 'public, max-age=31536000'
         });
         
-        // Отправляем файл
         const stream = fs.createReadStream(filePath);
         stream.pipe(res);
     });
@@ -890,10 +883,9 @@ async function handleRegister(req, res) {
                         { expiresIn: '30d' }
                     );
                     
-                    // Если выбрано "запомнить меня", сохраняем сессию
                     if (rememberMe && deviceId) {
                         const expiresAt = new Date();
-                        expiresAt.setDate(expiresAt.getDate() + 30); // 30 дней
+                        expiresAt.setDate(expiresAt.getDate() + 30);
                         
                         db.run(
                             'INSERT OR REPLACE INTO user_sessions (user_id, device_id, token, expires_at) VALUES (?, ?, ?, ?)',
@@ -946,10 +938,9 @@ async function handleLogin(req, res) {
                 { expiresIn: '30d' }
             );
             
-            // Если выбрано "запомнить меня", сохраняем сессию
             if (rememberMe && deviceId) {
                 const expiresAt = new Date();
-                expiresAt.setDate(expiresAt.getDate() + 30); // 30 дней
+                expiresAt.setDate(expiresAt.getDate() + 30);
                 
                 db.run(
                     'INSERT OR REPLACE INTO user_sessions (user_id, device_id, token, expires_at) VALUES (?, ?, ?, ?)',
@@ -974,7 +965,6 @@ async function handleLogin(req, res) {
     });
 }
 
-// Валидация токена с проверкой сессии устройства
 async function handleValidateToken(req, res) {
     const authHeader = req.headers.authorization;
     const deviceId = req.headers['x-device-id'];
@@ -993,7 +983,6 @@ async function handleValidateToken(req, res) {
         const decoded = jwt.verify(token, JWT_SECRET);
         console.log('Токен расшифрован, userId:', decoded.userId);
         
-        // Проверяем сессию устройства, если предоставлен deviceId
         if (deviceId) {
             db.get(
                 'SELECT token FROM user_sessions WHERE user_id = ? AND device_id = ? AND expires_at > ?',
@@ -1015,12 +1004,10 @@ async function handleValidateToken(req, res) {
                         return;
                     }
                     
-                    // Сессия валидна, получаем данные пользователя
                     getUserAndRespond(decoded.userId, res);
                 }
             );
         } else {
-            // Если нет deviceId, просто проверяем пользователя
             getUserAndRespond(decoded.userId, res);
         }
     } catch (error) {
@@ -1030,7 +1017,6 @@ async function handleValidateToken(req, res) {
     }
 }
 
-// Вспомогательная функция для получения пользователя и отправки ответа
 function getUserAndRespond(userId, res) {
     db.get('SELECT id, email, username FROM users WHERE id = ?', [userId], (err, user) => {
         if (err) {
@@ -1056,7 +1042,6 @@ function getUserAndRespond(userId, res) {
     });
 }
 
-// Выход из системы с удалением сессии устройства
 async function handleLogout(req, res) {
     const authHeader = req.headers.authorization;
     const deviceId = req.headers['x-device-id'];
@@ -1072,7 +1057,6 @@ async function handleLogout(req, res) {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         
-        // Удаляем сессию устройства
         if (deviceId) {
             db.run(
                 'DELETE FROM user_sessions WHERE user_id = ? AND device_id = ?',
@@ -1121,7 +1105,6 @@ async function handleAddContact(req, res) {
     
     console.log('Добавление контакта:', email, 'для пользователя:', req.userId);
     
-    // Находим пользователя по email
     db.get('SELECT id, username FROM users WHERE email = ?', [email], (err, contact) => {
         if (err) {
             console.error('Database error:', err);
@@ -1142,7 +1125,6 @@ async function handleAddContact(req, res) {
             return;
         }
         
-        // Проверяем, есть ли уже такой контакт
         db.get(
             'SELECT id FROM contacts WHERE user_id = ? AND contact_id = ?',
             [req.userId, contact.id],
@@ -1160,7 +1142,6 @@ async function handleAddContact(req, res) {
                     return;
                 }
                 
-                // Добавляем контакт в обе стороны (симметрично)
                 db.serialize(() => {
                     db.run(
                         'INSERT INTO contacts (user_id, contact_id) VALUES (?, ?)',
@@ -1185,7 +1166,6 @@ async function handleAddContact(req, res) {
                         }
                     );
                     
-                    // Создаем новый чат без названия
                     db.run(
                         'INSERT INTO chats (is_group) VALUES (0)',
                         function(err) {
@@ -1198,7 +1178,6 @@ async function handleAddContact(req, res) {
                             
                             const chatId = this.lastID;
                             
-                            // Получаем имя текущего пользователя
                             db.get('SELECT username FROM users WHERE id = ?', [req.userId], (err, currentUser) => {
                                 if (err || !currentUser) {
                                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -1206,9 +1185,6 @@ async function handleAddContact(req, res) {
                                     return;
                                 }
                                 
-                                // Добавляем участников в чат с персонализированными названиями
-                                // Для пользователя 1: чат называется "Чат с {contact.username}"
-                                // Для пользователя 2: чат называется "Чат с {currentUser.username}"
                                 db.run(
                                     'INSERT INTO chat_members (chat_id, user_id, chat_name) VALUES (?, ?, ?), (?, ?, ?)',
                                     [chatId, req.userId, 'Чат с ' + contact.username, 
@@ -1241,7 +1217,6 @@ async function handleAddContact(req, res) {
 }
 
 async function handleGetChats(req, res) {
-    // Получаем все чаты пользователя с информацией о последнем сообщении
     db.all(
         'SELECT c.id as chat_id, cm.chat_name, c.is_group, c.created_at, ' +
         '(SELECT content FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message, ' +
@@ -1276,7 +1251,6 @@ async function handleStartChat(req, res) {
     
     console.log('Создание чата с контактом:', contactId, 'для пользователя:', req.userId);
     
-    // Проверяем, есть ли уже чат с этим контактом
     db.get(
         'SELECT c.id as chat_id FROM chats c ' +
         'JOIN chat_members cm1 ON c.id = cm1.chat_id ' +
@@ -1292,7 +1266,6 @@ async function handleStartChat(req, res) {
             }
             
             if (existingChat) {
-                // Чат уже существует, возвращаем его ID
                 console.log('Чат уже существует, chatId:', existingChat.chat_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ 
@@ -1303,7 +1276,6 @@ async function handleStartChat(req, res) {
                 return;
             }
             
-            // Получаем имя контакта
             db.get('SELECT username FROM users WHERE id = ?', [contactId], (err, contact) => {
                 if (err || !contact) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -1311,7 +1283,6 @@ async function handleStartChat(req, res) {
                     return;
                 }
                 
-                // Получаем имя текущего пользователя
                 db.get('SELECT username FROM users WHERE id = ?', [req.userId], (err, currentUser) => {
                     if (err || !currentUser) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -1319,7 +1290,6 @@ async function handleStartChat(req, res) {
                         return;
                     }
                     
-                    // Создаем новый чат без названия
                     db.run(
                         'INSERT INTO chats (is_group) VALUES (0)',
                         function(err) {
@@ -1332,7 +1302,6 @@ async function handleStartChat(req, res) {
                             
                             const chatId = this.lastID;
                             
-                            // Добавляем участников в чат с персонализированными названиями
                             db.run(
                                 'INSERT INTO chat_members (chat_id, user_id, chat_name) VALUES (?, ?, ?), (?, ?, ?)',
                                 [chatId, req.userId, 'Чат с ' + contact.username, 
@@ -1374,7 +1343,6 @@ async function handleGetMessages(req, res) {
     
     console.log('Получение сообщений для чата:', chatId, 'пользователь:', req.userId);
     
-    // Проверяем, имеет ли пользователь доступ к этому чату
     db.get(
         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
         [chatId, req.userId],
@@ -1413,7 +1381,6 @@ async function handleGetMessages(req, res) {
     );
 }
 
-// Функция для получения ID другого пользователя в чате
 async function handleGetOtherUser(req, res) {
     const chatId = req.url.split('/')[3];
     
@@ -1423,7 +1390,6 @@ async function handleGetOtherUser(req, res) {
         return;
     }
     
-    // Проверяем, имеет ли пользователь доступ к этому чату
     db.get(
         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
         [chatId, req.userId],
@@ -1434,7 +1400,6 @@ async function handleGetOtherUser(req, res) {
                 return;
             }
             
-            // Находим ID другого пользователя в чате
             db.get(
                 'SELECT u.id FROM chat_members cm ' +
                 'JOIN users u ON cm.user_id = u.id ' +
@@ -1498,9 +1463,7 @@ wss.on('connection', (ws, req) => {
                         ws.userInfo = user;
                         ws.deviceId = message.deviceId;
                         
-                        // Удаляем старые подключения для этого пользователя
                         clients.delete(user.id);
-                        // Добавляем новое подключение
                         clients.set(user.id, ws);
                         
                         console.log('WebSocket аутентифицирован: ' + user.username + ' (' + user.email + ') ID: ' + user.id + ' Устройство: ' + message.deviceId);
@@ -1515,11 +1478,9 @@ wss.on('connection', (ws, req) => {
                     ws.send(JSON.stringify({ type: 'auth_error', message: 'Invalid token' }));
                 }
             } else if (ws.isAuthenticated) {
-                // Обработка сообщений от аутентифицированных пользователей
                 if (message.type === 'message' && message.content) {
                     const { chatId, content } = message;
                     
-                    // Проверяем, имеет ли пользователь доступ к этому чату
                     db.get(
                         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                         [chatId, ws.userId],
@@ -1532,7 +1493,6 @@ wss.on('connection', (ws, req) => {
                                 return;
                             }
                             
-                            // Сохраняем сообщение в базу данных
                             db.run(
                                 'INSERT INTO messages (chat_id, user_id, content, message_type) VALUES (?, ?, ?, ?)',
                                 [chatId, ws.userId, content, 'text'],
@@ -1546,7 +1506,6 @@ wss.on('connection', (ws, req) => {
                                         return;
                                     }
                                     
-                                    // Получаем сохраненное сообщение с информацией об отправителе
                                     db.get(
                                         'SELECT m.*, u.username, u.email FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = ?',
                                         [this.lastID],
@@ -1556,7 +1515,6 @@ wss.on('connection', (ws, req) => {
                                                 return;
                                             }
                                             
-                                            // Получаем участников чата
                                             db.all(
                                                 'SELECT user_id FROM chat_members WHERE chat_id = ?',
                                                 [chatId],
@@ -1566,7 +1524,6 @@ wss.on('connection', (ws, req) => {
                                                         return;
                                                     }
                                                     
-                                                    // Отправляем сообщение всем участникам
                                                     members.forEach(member => {
                                                         const clientWs = clients.get(member.user_id);
                                                         if (clientWs && clientWs.readyState === WebSocket.OPEN) {
@@ -1577,7 +1534,6 @@ wss.on('connection', (ws, req) => {
                                                         }
                                                     });
                                                     
-                                                    // Отправляем уведомление о создании чата (если это первое сообщение)
                                                     db.get(
                                                         'SELECT COUNT(*) as count FROM messages WHERE chat_id = ?',
                                                         [chatId],
@@ -1606,14 +1562,12 @@ wss.on('connection', (ws, req) => {
                 } else if (message.type === 'typing') {
                     const { chatId, userId, username } = message;
                     
-                    // Проверяем, имеет ли пользователь доступ к этому чату
                     db.get(
                         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                         [chatId, ws.userId],
                         (err, hasAccess) => {
                             if (err || !hasAccess) return;
                             
-                            // Отправляем уведомление о печати другим участникам чата
                             db.all(
                                 'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?',
                                 [chatId, userId],
@@ -1636,12 +1590,10 @@ wss.on('connection', (ws, req) => {
                         }
                     );
                 } else if (message.type === 'call_offer') {
-                    // Отправляем предложение о звонке целевым пользователям
                     const { chatId, targetId, offer, callerData } = message;
                     
                     console.log('call_offer от', ws.userId, 'для', targetId, 'чат', chatId, 'тип:', callerData.isVideo ? 'видео' : 'аудио');
                     
-                    // Проверяем, имеет ли пользователь доступ к этому чату
                     db.get(
                         'SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',
                         [chatId, ws.userId],
@@ -1656,7 +1608,6 @@ wss.on('connection', (ws, req) => {
                                 return;
                             }
                             
-                            // Находим целевого пользователя
                             const targetClient = Array.from(clients.entries()).find(([id, client]) => 
                                 client.userId === targetId && client.readyState === WebSocket.OPEN
                             );
@@ -1664,7 +1615,6 @@ wss.on('connection', (ws, req) => {
                             if (targetClient && targetClient[1]) {
                                 console.log('Отправка call_offer пользователю', targetId);
                                 
-                                // Сохраняем данные о звонке у вызываемого пользователя
                                 targetClient[1].callData = {
                                     chatId,
                                     targetId: ws.userId,
@@ -1687,7 +1637,6 @@ wss.on('connection', (ws, req) => {
                                     }
                                 }));
                                 
-                                // Отправляем подтверждение вызывающему
                                 ws.send(JSON.stringify({
                                     type: 'call_offer_sent',
                                     chatId: chatId,
@@ -1709,7 +1658,6 @@ wss.on('connection', (ws, req) => {
                     
                     console.log('call_answer от', ws.userId, 'для', targetId);
                     
-                    // Находим вызывающего пользователя
                     const callerClient = Array.from(clients.entries()).find(([id, client]) => 
                         client.userId === targetId && client.readyState === WebSocket.OPEN
                     );
@@ -1717,7 +1665,6 @@ wss.on('connection', (ws, req) => {
                     if (callerClient && callerClient[1]) {
                         console.log('Отправка call_answer пользователю', targetId);
                         
-                        // Сохраняем ответ у вызывающего
                         callerClient[1].callAnswer = answer;
                         
                         callerClient[1].send(JSON.stringify({
@@ -1735,7 +1682,6 @@ wss.on('connection', (ws, req) => {
                     
                     console.log('call_ice_candidate от', ws.userId, 'для', targetId);
                     
-                    // Находим целевого пользователя
                     const targetClient = Array.from(clients.entries()).find(([id, client]) => 
                         client.userId === targetId && client.readyState === WebSocket.OPEN
                     );
@@ -1754,7 +1700,6 @@ wss.on('connection', (ws, req) => {
                     
                     console.log('call_end от', ws.userId, 'для', targetId, 'причина:', reason);
                     
-                    // Находим целевого пользователя
                     const targetClient = Array.from(clients.entries()).find(([id, client]) => 
                         client.userId === targetId && client.readyState === WebSocket.OPEN
                     );
@@ -1767,7 +1712,6 @@ wss.on('connection', (ws, req) => {
                             senderId: ws.userId
                         }));
                         
-                        // Очищаем данные о звонке
                         ws.callData = null;
                         targetClient[1].callData = null;
                     }
@@ -1777,7 +1721,6 @@ wss.on('connection', (ws, req) => {
                     
                     console.log('call_error от', ws.userId, 'для', targetId, 'ошибка:', error);
                     
-                    // Находим целевого пользователя
                     const targetClient = Array.from(clients.entries()).find(([id, client]) => 
                         client.userId === targetId && client.readyState === WebSocket.OPEN
                     );
@@ -1801,7 +1744,6 @@ wss.on('connection', (ws, req) => {
         if (ws.isAuthenticated && ws.userId) {
             console.log('Отключение пользователя ID: ' + ws.userId + ' с устройства: ' + ws.deviceId);
             
-            // Если пользователь был в звонке, уведомляем другого участника
             if (ws.callData) {
                 const { chatId, targetId } = ws.callData;
                 
@@ -1830,11 +1772,10 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-// ========== САМО-ПИНГ ДЛЯ RENDER.COM ==========
+// САМО-ПИНГ ДЛЯ RENDER.COM
 function startSelfPing() {
     const selfUrl = 'https://beresta-messenger-web.onrender.com';
     
-    // Функция для выполнения пинга
     const pingSelf = async () => {
         try {
             console.log('🔔 Выполняю само-пинг...');
@@ -1846,17 +1787,11 @@ function startSelfPing() {
         }
     };
     
-    // Выполняем пинг сразу при запуске
     pingSelf();
-    
-    // Устанавливаем интервал пинга каждые 5 минут (300000 мс)
-    // Render.com отключает инстансы после 15 минут неактивности
     setInterval(pingSelf, 5 * 60 * 1000);
-    
     console.log('🔄 Само-пинг активирован: каждые 5 минут');
 }
 
-// Запускаем само-пинг только в production режиме
 if (process.env.NODE_ENV === 'production') {
     startSelfPing();
 }
@@ -1873,46 +1808,9 @@ server.listen(PORT, () => {
         console.log('🔗 WebSocket URL:', 'wss://' + process.env.RENDER_EXTERNAL_HOSTNAME);
     }
     
-    console.log('\n📱 Адаптивный интерфейс:');
-    console.log('• На ПК: боковая панель + область чата справа');
-    console.log('• На мобильных: отдельный экран чата с меню профиля');
-    console.log('• Автоматический вход с сохранением на устройстве');
-    
-    console.log('\n🔐 Автоматический вход:');
-    console.log('• Сохранение токена с привязкой к устройству');
-    console.log('• Опция "Запомнить меня на этом устройстве"');
-    console.log('• Удаление сессии при выходе');
-    
-    console.log('\n📞 Аудио/Видео звонки:');
-    console.log('• Двусторонняя аудио/видеосвязь через WebRTC');
-    console.log('• Используются STUN серверы');
-    console.log('• Работает на мобильных устройствах');
-    console.log('• Видеозвонки: полный экран собеседника, PIP видео пользователя');
-    console.log('• Кнопки управления: включить/выключить видео/звук, завершить звонок');
-    
-    console.log('\n📎 Прикрепление файлов:');
-    console.log('• Поддержка фото, видео, документов и других файлов');
-    console.log('• Максимальный размер файла: 100MB');
-    console.log('• Индикатор загрузки и возможность отмены');
-    
-    console.log('\n👥 Управление контактами:');
-    console.log('• Кнопка добавления контакта скрывается при открытии чата');
-    console.log('• Кнопка видна только на вкладке "Контакты"');
-    
-    console.log('\n💾 База данных:', dbPath);
-    console.log('📁 Директория загрузок:', UPLOADS_DIR);
-    
-    if (process.env.NODE_ENV === 'production') {
-        console.log('\n✅ Режим: Production');
-        console.log('✅ Поддержка HTTPS/WebSocket Secure');
-    } else {
-        console.log('\n⚙️  Режим: Development');
-    }
-    
     console.log('\n✅ Готово! Откройте в браузере: http://localhost:' + PORT);
 });
 
-// Обработка graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
     server.close(() => {
