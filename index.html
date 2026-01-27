@@ -2177,6 +2177,7 @@
     </button>
 
     <script>
+<script>
         // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
         let currentUser = null;
         let token = null;
@@ -2213,10 +2214,43 @@
         let callTimeout = null;
         let isVideoCall = false;
         let currentFileUpload = null;
+        let isReconnecting = false;
         
         // Переменные для навигации
         let currentMobileTab = 'chats';
         let currentDesktopTab = 'chats';
+        
+        // ===== УЛУЧШЕННАЯ КОНФИГУРАЦИЯ WEBRTC =====
+        const peerConnectionConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                // Добавлены TURN серверы для обхода NAT
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceTransportPolicy: 'all',
+            rtcpMuxPolicy: 'require',
+            bundlePolicy: 'max-bundle',
+            iceCandidatePoolSize: 10,
+            sdpSemantics: 'unified-plan'
+        };
         
         // ===== ДИНАМИЧЕСКОЕ ОПРЕДЕЛЕНИЕ URL =====
         const getWebSocketUrl = () => {
@@ -2537,6 +2571,15 @@
                     handleCallError(data);
                     break;
                     
+                case 'renegotiate':
+                    console.log('🔄 Получено renegotiate от:', data.senderId);
+                    handleRenegotiate(data);
+                    break;
+                    
+                case 'ice_complete':
+                    console.log('✅ ICE кандидаты собраны полностью');
+                    break;
+                    
                 case 'pong':
                     console.log('🏓 Pong received');
                     break;
@@ -2776,6 +2819,34 @@
                     test: 'WebSocket connection test'
                 }));
             }
+        }
+        
+        // Тестирование медиа-устройств
+        function testMediaDevices() {
+            console.log('🎤 Тестирование медиа-устройств...');
+            
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    console.log('📹 Доступные устройства:');
+                    devices.forEach(device => {
+                        console.log(`${device.kind}: ${device.label} (${device.deviceId})`);
+                    });
+                    
+                    if (devices.some(d => d.kind === 'audioinput')) {
+                        console.log('✅ Микрофон доступен');
+                    } else {
+                        console.log('❌ Микрофон не доступен');
+                    }
+                    
+                    if (devices.some(d => d.kind === 'videoinput')) {
+                        console.log('✅ Камера доступна');
+                    } else {
+                        console.log('❌ Камера не доступна');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Ошибка перечисления устройств:', error);
+                });
         }
         
         // ===== МОБИЛЬНОЕ МЕНЮ ПРОФИЛЯ =====
@@ -3813,18 +3884,6 @@
         }
         
         // ===== АУДИО/ВИДЕО ЗВОНКИ =====
-        const peerConnectionConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
-            ],
-            iceTransportPolicy: 'all',
-            rtcpMuxPolicy: 'require',
-            bundlePolicy: 'max-bundle'
-        };
         
         async function startAudioCall() {
             await startCall(false);
@@ -3896,15 +3955,70 @@
                 };
                 
                 peerConnection.onicecandidate = (event) => {
-                    console.log('📡 Новый ICE кандидат:', event.candidate ? event.candidate.candidate : 'null');
+                    console.log('❄️ ICE кандидат:', event.candidate ? event.candidate.candidate : 'null');
+                    console.log('❄️ Тип кандидата:', event.candidate ? event.candidate.type : 'null');
                     
                     if (event.candidate && ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                        const targetId = isCaller ? currentCallData.targetId : currentCallData.callerId;
                         ws.send(JSON.stringify({
                             type: 'call_ice_candidate',
-                            chatId: currentChatId,
-                            targetId: otherUserId,
+                            chatId: currentCallData.chatId,
+                            targetId: targetId,
                             candidate: event.candidate
                         }));
+                    } else if (!event.candidate) {
+                        console.log('✅ Все ICE кандидаты собраны');
+                        
+                        // Отправляем сообщение о завершении сбора ICE кандидатов
+                        if (isCaller && ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                            ws.send(JSON.stringify({
+                                type: 'ice_complete',
+                                chatId: currentCallData.chatId,
+                                targetId: currentCallData.targetId
+                            }));
+                        }
+                    }
+                };
+                
+                peerConnection.onicegatheringstatechange = () => {
+                    console.log('❄️ ICE gathering state:', peerConnection.iceGatheringState);
+                    
+                    if (peerConnection.iceGatheringState === 'complete') {
+                        console.log('✅ Сбор ICE кандидатов завершен');
+                    }
+                };
+                
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log('❄️ ICE состояние соединения:', peerConnection.iceConnectionState);
+                    
+                    if (peerConnection.iceConnectionState === 'connected') {
+                        console.log('✅ ICE соединение установлено!');
+                        updateCallStatus('Соединение установлено');
+                        startCallTimer();
+                        showNotification('Звонок подключен', 'success');
+                        isReconnecting = false;
+                    } else if (peerConnection.iceConnectionState === 'disconnected') {
+                        console.log('❌ ICE соединение потеряно');
+                        updateCallStatus('Потеря соединения...');
+                        
+                        if (!isReconnecting) {
+                            isReconnecting = true;
+                            setTimeout(() => {
+                                if (peerConnection && 
+                                    peerConnection.iceConnectionState === 'disconnected') {
+                                    console.log('🔄 Попытка восстановления ICE соединения...');
+                                    renegotiateConnection();
+                                }
+                            }, 2000);
+                        }
+                    } else if (peerConnection.iceConnectionState === 'failed') {
+                        console.log('❌ ICE соединение не удалось установить');
+                        updateCallStatus('Ошибка соединения');
+                        showNotification('Не удалось установить соединение', 'error');
+                        cleanupCall();
+                    } else if (peerConnection.iceConnectionState === 'closed') {
+                        console.log('❌ ICE соединение закрыто');
+                        cleanupCall();
                     }
                 };
                 
@@ -3912,26 +4026,26 @@
                     console.log('📡 Состояние соединения:', peerConnection.connectionState);
                     
                     if (peerConnection.connectionState === 'connected') {
-                        console.log('✅ Соединение установлено!');
-                        updateCallStatus('Соединение установлено');
-                        startCallTimer();
-                        showNotification('Звонок подключен', 'success');
-                        
-                        iceCandidatesQueue = [];
-                        
+                        console.log('✅ WebRTC соединение установлено!');
                     } else if (peerConnection.connectionState === 'disconnected' ||
                                peerConnection.connectionState === 'failed' ||
                                peerConnection.connectionState === 'closed') {
-                        console.log('❌ Соединение прервано');
-                        endCall();
-                        showNotification('Соединение прервано', 'error');
+                        console.log('❌ WebRTC соединение прервано');
+                        if (peerConnection.connectionState === 'disconnected') {
+                            updateCallStatus('Соединение потеряно...');
+                        }
                     }
+                };
+                
+                peerConnection.onsignalingstatechange = () => {
+                    console.log('📡 Сигнальное состояние:', peerConnection.signalingState);
                 };
                 
                 const offerOptions = {
                     offerToReceiveAudio: true,
                     offerToReceiveVideo: isVideo,
-                    voiceActivityDetection: true
+                    voiceActivityDetection: true,
+                    iceRestart: false
                 };
                 
                 console.log('🔄 Создание предложения...');
@@ -3981,6 +4095,39 @@
                 console.error('❌ Ошибка при начале звонка:', error);
                 showNotification('Не удалось начать звонок: ' + error.message, 'error');
                 cleanupCall();
+            }
+        }
+        
+        async function renegotiateConnection() {
+            if (!peerConnection || !currentCallData) return;
+            
+            try {
+                console.log('🔄 Начинаю повторное согласование соединения...');
+                
+                const offerOptions = {
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: isVideoCall,
+                    voiceActivityDetection: true,
+                    iceRestart: true
+                };
+                
+                const offer = await peerConnection.createOffer(offerOptions);
+                await peerConnection.setLocalDescription(offer);
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const targetId = isCaller ? currentCallData.targetId : currentCallData.callerId;
+                    
+                    ws.send(JSON.stringify({
+                        type: 'renegotiate',
+                        chatId: currentCallData.chatId,
+                        targetId: targetId,
+                        offer: offer
+                    }));
+                    
+                    console.log('✅ Запрос повторного согласования отправлен');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка при повторном согласовании:', error);
             }
         }
         
@@ -4146,6 +4293,8 @@
                 };
                 
                 peerConnection.onicecandidate = (event) => {
+                    console.log('❄️ ICE кандидат при ответе:', event.candidate ? event.candidate.candidate : 'null');
+                    
                     if (event.candidate && ws && ws.readyState === WebSocket.OPEN && currentCallData) {
                         ws.send(JSON.stringify({
                             type: 'call_ice_candidate',
@@ -4153,24 +4302,51 @@
                             targetId: currentCallData.callerId,
                             candidate: event.candidate
                         }));
+                    } else if (!event.candidate) {
+                        console.log('✅ Все ICE кандидаты собраны (ответ)');
+                    }
+                };
+                
+                peerConnection.onicegatheringstatechange = () => {
+                    console.log('❄️ ICE gathering state при ответе:', peerConnection.iceGatheringState);
+                };
+                
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log('❄️ ICE состояние соединения при ответе:', peerConnection.iceConnectionState);
+                    
+                    if (peerConnection.iceConnectionState === 'connected') {
+                        console.log('✅ ICE соединение установлено при ответе!');
+                        updateCallStatus('Соединение установлено');
+                        startCallTimer();
+                        showNotification('Звонок подключен', 'success');
+                        isReconnecting = false;
+                    } else if (peerConnection.iceConnectionState === 'disconnected') {
+                        console.log('❌ ICE соединение потеряно при ответе');
+                        updateCallStatus('Потеря соединения...');
+                        
+                        if (!isReconnecting) {
+                            isReconnecting = true;
+                            setTimeout(() => {
+                                if (peerConnection && 
+                                    peerConnection.iceConnectionState === 'disconnected') {
+                                    console.log('🔄 Попытка восстановления ICE соединения...');
+                                    renegotiateConnection();
+                                }
+                            }, 2000);
+                        }
+                    } else if (peerConnection.iceConnectionState === 'failed') {
+                        console.log('❌ ICE соединение не удалось установить при ответе');
+                        updateCallStatus('Ошибка соединения');
+                        showNotification('Не удалось установить соединение', 'error');
+                        cleanupCall();
+                    } else if (peerConnection.iceConnectionState === 'closed') {
+                        console.log('❌ ICE соединение закрыто при ответе');
+                        cleanupCall();
                     }
                 };
                 
                 peerConnection.onconnectionstatechange = () => {
                     console.log('📡 Состояние соединения при ответе:', peerConnection.connectionState);
-                    
-                    if (peerConnection.connectionState === 'connected') {
-                        console.log('✅ Соединение установлено при ответе!');
-                        updateCallStatus('Соединение установлено');
-                        startCallTimer();
-                        showNotification('Звонок подключен', 'success');
-                    } else if (peerConnection.connectionState === 'disconnected' ||
-                               peerConnection.connectionState === 'failed' ||
-                               peerConnection.connectionState === 'closed') {
-                        console.log('❌ Соединение прервано при ответе');
-                        endCall();
-                        showNotification('Соединение прервано', 'error');
-                    }
                 };
                 
                 console.log('🔄 Установка удаленного описания...');
@@ -4281,6 +4457,37 @@
                 console.log('✅ ICE кандидат успешно добавлен');
             } catch (error) {
                 console.error('❌ Ошибка при добавлении ICE кандидата:', error);
+            }
+        }
+        
+        async function handleRenegotiate(data) {
+            console.log('🔄 Обработка повторного согласования от:', data.senderId);
+            
+            if (!peerConnection) {
+                console.log('❌ Нет активного соединения');
+                return;
+            }
+            
+            try {
+                console.log('🔄 Установка нового удаленного описания...');
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                
+                console.log('🔄 Создание нового ответа...');
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'call_answer',
+                        chatId: data.chatId,
+                        targetId: data.senderId,
+                        answer: answer
+                    }));
+                    
+                    console.log('✅ Новый ответ на повторное согласование отправлен');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка при обработке повторного согласования:', error);
             }
         }
         
@@ -4523,21 +4730,31 @@
             muteVideo = false;
             iceCandidatesQueue = [];
             isVideoCall = false;
+            isReconnecting = false;
         }
         
         async function endCall() {
             console.log('📞 Завершение звонка');
             
-            if (ws && ws.readyState === WebSocket.OPEN && currentCallData) {
-                const targetId = isCaller ? currentCallData.targetId : currentCallData.callerId;
+            // Проверяем, есть ли активное соединение
+            if (peerConnection && 
+                (peerConnection.connectionState === 'connected' || 
+                 peerConnection.connectionState === 'connecting' ||
+                 peerConnection.iceConnectionState === 'connected' ||
+                 peerConnection.iceConnectionState === 'checking')) {
+                console.log('📞 Завершение активного звонка...');
                 
-                if (targetId) {
-                    ws.send(JSON.stringify({
-                        type: 'call_end',
-                        chatId: currentCallData.chatId,
-                        targetId: targetId,
-                        reason: 'ended_by_user'
-                    }));
+                if (ws && ws.readyState === WebSocket.OPEN && currentCallData) {
+                    const targetId = isCaller ? currentCallData.targetId : currentCallData.callerId;
+                    
+                    if (targetId) {
+                        ws.send(JSON.stringify({
+                            type: 'call_end',
+                            chatId: currentCallData.chatId,
+                            targetId: targetId,
+                            reason: 'ended_by_user'
+                        }));
+                    }
                 }
             }
             
@@ -4659,18 +4876,27 @@
                 debugBtn.style.cssText = 'position: fixed; bottom: 10px; left: 10px; z-index: 9999; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;';
                 debugBtn.onclick = testWebSocketConnection;
                 document.body.appendChild(debugBtn);
+                
+                const mediaBtn = document.createElement('button');
+                mediaBtn.innerHTML = '🎤 Test Media';
+                mediaBtn.style.cssText = 'position: fixed; bottom: 10px; left: 80px; z-index: 9999; padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;';
+                mediaBtn.onclick = testMediaDevices;
+                document.body.appendChild(mediaBtn);
             }
         };
         
         // Экспортируем функции для отладки
         window.beresta = {
             testWebSocketConnection,
+            testMediaDevices,
             getWebSocketUrl,
             getBaseUrl,
             connectWebSocket,
             showNotification,
             getCurrentUser: () => currentUser,
-            getWebSocketState: () => ws ? ws.readyState : null
+            getWebSocketState: () => ws ? ws.readyState : null,
+            getPeerConnection: () => peerConnection,
+            getCurrentCallData: () => currentCallData
         };
     </script>
 </body>
