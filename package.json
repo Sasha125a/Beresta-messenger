@@ -1,15 +1,12 @@
 {
   "name": "beresta-messenger",
   "version": "1.0.0",
-  "description": "Современный мессенджер с голосовыми сообщениями, файлами и аудиозвонками",
+  "description": "Береста - безопасный мессенджер",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "render-start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "ws": "^8.14.2",
@@ -20,13 +17,8 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": [
-    "messenger",
-    "chat",
-    "webrtc",
-    "voice-messages",
-    "file-sharing"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }
+
