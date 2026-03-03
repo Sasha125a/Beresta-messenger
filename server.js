@@ -31,6 +31,13 @@ const dbPath = process.env.NODE_ENV === 'production'
     : path.join(__dirname, 'beresta.db');
 const db = new sqlite3.Database(dbPath);
 
+const express = require('express');
+const app = express();
+
+// Middleware для парсинга JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Инициализация таблиц
 db.serialize(() => {
     // Пользователи
@@ -1479,6 +1486,82 @@ async function handleGetOtherUser(req, res) {
     );
 }
 
+// ========== API ДЛЯ NOTIFICATIONSERVICE ==========
+
+// Эндпоинт для получения уведомлений
+app.get('/api/notifications/unread', authenticate, (req, res) => {
+    const userId = req.userId;
+    
+    db.all(
+        `SELECT m.*, u.username, u.email 
+         FROM messages m 
+         JOIN users u ON m.user_id = u.id 
+         WHERE m.chat_id IN (
+             SELECT chat_id FROM chat_members WHERE user_id = ?
+         ) 
+         AND m.user_id != ? 
+         AND m.created_at > datetime('now', '-1 hour')
+         ORDER BY m.created_at DESC 
+         LIMIT 20`,
+        [userId, userId],
+        (err, messages) => {
+            if (err) {
+                console.error('Error fetching notifications:', err);
+                res.status(500).json({ error: 'Database error' });
+                return;
+            }
+            
+            const notifications = messages.map(msg => ({
+                id: msg.id,
+                type: msg.message_type === 'call' ? 'call' : 'message',
+                title: msg.message_type === 'call' ? 'Входящий звонок' : 'Новое сообщение',
+                message: msg.content || (msg.message_type === 'voice' ? 'Голосовое сообщение' : 'Новое сообщение'),
+                chatId: msg.chat_id,
+                senderId: msg.user_id,
+                senderName: msg.username,
+                isVideo: msg.message_type === 'video',
+                createdAt: msg.created_at
+            }));
+            
+            res.json({ 
+                notifications: notifications,
+                count: notifications.length 
+            });
+        }
+    );
+});
+
+// Эндпоинт для отметки уведомлений как прочитанных
+app.post('/api/notifications/mark-read', authenticate, (req, res) => {
+    const { notificationIds } = req.body;
+    // В этой версии просто возвращаем успех
+    res.json({ success: true });
+});
+
+// Эндпоинт для получения активных звонков
+app.get('/api/calls/active', authenticate, (req, res) => {
+    // Заглушка - возвращаем пустой массив
+    res.json({ activeCalls: [] });
+});
+
+// Эндпоинт для получения информации о чате
+app.get('/api/chat/:chatId/other-user', authenticate, (req, res) => {
+    const chatId = req.params.chatId;
+    const userId = req.userId;
+    
+    db.get(
+        'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?',
+        [chatId, userId],
+        (err, otherUser) => {
+            if (err || !otherUser) {
+                res.status(404).json({ error: 'Other user not found' });
+                return;
+            }
+            res.json({ userId: otherUser.user_id });
+        }
+    );
+});
+
 // Создаем WebSocket сервер
 const wss = new WebSocket.Server({ 
     server,
@@ -2061,4 +2144,5 @@ process.on('SIGINT', () => {
 
 // Экспортируем для тестирования
 module.exports = { server, wss, db };
+
 
